@@ -15,22 +15,26 @@ type version struct {
 }
 
 type panel struct {
-	Name string `json:"name"`
-	Text string `json:"full_text"`
+	Name                string `json:"name"`
+	Text                string `json:"full_text"`
+	Background          string `json:"background,omitempty"`
+	Color               string `json:"color,omitempty"`
+	Separator           bool   `json:"separator" default:false`
+	SeparatorBlockWidth int    `json:"separator_block_width" default:0`
 }
 
 func NewGoodPanel(name string, text string) panel {
-	return panel{name, text}
+	return panel{Name: name, Text: text}
 }
 
 func NewBadPanel(name string, text string) panel {
-	return panel{name, text}
+	return panel{Name: name, Text: text, Color: base, Background: accent}
 }
 
 var recentVolume = []int64{0, 0, 0, 0, 0}
+var base, accent string
 
 func main() {
-	var base, accent string
 	flag.StringVar(&base, "base", "#000000", "base color")
 	flag.StringVar(&accent, "accent", "#000000", "accent color")
 	flag.Parse()
@@ -43,7 +47,7 @@ func main() {
 		muted, _ := json.Marshal(muted())
 		xwayland, _ := json.Marshal(xwayland())
 		volume, _ := json.Marshal(volume())
-		fmt.Printf(",[%s%s%s%s]\n", xwayland, muted, volume, date)
+		fmt.Printf(",[%s,%s,%s,%s]\n", xwayland, muted, volume, date)
 		time.Sleep(3 * 1000 * time.Millisecond)
 	}
 }
@@ -119,7 +123,7 @@ func volume() panel {
 		return NewGoodPanel("volume", "")
 	}
 
-	return NewGoodPanel("volume", fmt.Sprintf("VOL: %d%%", vol))
+	return NewGoodPanel("volume", fmt.Sprintf(" VOL: %d%% ", vol))
 }
 
 func xwayland() panel {
