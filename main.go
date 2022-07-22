@@ -37,7 +37,8 @@ func main() {
 
 	for {
 		date, _ := json.Marshal(date())
-		fmt.Printf(",[%s]\n", date)
+		muted, _ := json.Marshal(muted())
+		fmt.Printf(",[%s%s]\n", muted, date)
 		time.Sleep(3 * 1000 * time.Millisecond)
 	}
 }
@@ -52,4 +53,22 @@ func date() panel {
 	res = strings.TrimSuffix(res, "\n")
 
 	return NewGoodPanel("date", res)
+}
+
+func muted() panel {
+	out, err := exec.Command("pactl", "get-source-mute", "@DEFAULT_SOURCE@").Output()
+	if err != nil {
+		return NewBadPanel("muted", "error")
+	}
+
+	res := string(out)
+	res = strings.TrimSuffix(res, "\n")
+
+	if res == "Mute: yes" {
+		return NewGoodPanel("muted", "")
+	} else if res == "Mute: no" {
+		return NewBadPanel("muted", " not muted ")
+	}
+
+	return NewBadPanel("muted", "error")
 }
