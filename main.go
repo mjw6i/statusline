@@ -40,7 +40,8 @@ func main() {
 		date, _ := json.Marshal(date())
 		muted, _ := json.Marshal(muted())
 		xwayland, _ := json.Marshal(xwayland())
-		fmt.Printf(",[%s%s%s]\n", xwayland, muted, date)
+		volume, _ := json.Marshal(volume())
+		fmt.Printf(",[%s%s%s%s]\n", xwayland, muted, volume, date)
 		time.Sleep(3 * 1000 * time.Millisecond)
 	}
 }
@@ -73,6 +74,25 @@ func muted() panel {
 	}
 
 	return NewBadPanel("muted", "error")
+}
+
+func volume() panel {
+	out, err := exec.Command("pactl", "get-sink-volume", "@DEFAULT_SINK@").Output()
+	if err != nil {
+		return NewBadPanel("volume", "error")
+	}
+
+	format := "Volume: front-left: %d / %d%% / %f dB, front-right: %d / %d%% / %f dB \n balance %f"
+
+	var fla, flp, fra, frp int64
+	var flo, fro, balance float64
+
+	_, err = fmt.Sscanf(string(out), format, &fla, &flp, &flo, &fra, &frp, &fro, &balance)
+	if err != nil {
+		return NewBadPanel("volume", "error")
+	}
+
+	return NewGoodPanel("volume", fmt.Sprintf("VOL: %d%%", flp))
 }
 
 func xwayland() panel {
