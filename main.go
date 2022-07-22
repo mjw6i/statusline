@@ -27,6 +27,8 @@ func NewBadPanel(name string, text string) panel {
 	return panel{name, text}
 }
 
+var recentVolume = []int64{0, 0, 0, 0, 0}
+
 func main() {
 	var base, accent string
 	flag.StringVar(&base, "base", "#000000", "base color")
@@ -99,6 +101,22 @@ func volume() panel {
 	vol, err := readVolume()
 	if err != nil {
 		return NewBadPanel("volume", "error")
+	}
+
+	recentVolume = recentVolume[1:]
+	recentVolume = append(recentVolume, vol)
+
+	f := recentVolume[0]
+	c := false
+	for _, v := range recentVolume[1:] {
+		if f != v {
+			c = true
+			break
+		}
+	}
+
+	if !c {
+		return NewGoodPanel("volume", "")
 	}
 
 	return NewGoodPanel("volume", fmt.Sprintf("VOL: %d%%", vol))
