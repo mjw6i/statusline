@@ -31,7 +31,7 @@ func NewBadPanel(name string, text string) panel {
 	return panel{Name: name, Text: text, Color: base, Background: accent}
 }
 
-var recentVolume = []int64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+var recentVolume = []int64{0, 0, 0, 0, 0}
 var base, accent string
 
 func main() {
@@ -48,7 +48,7 @@ func main() {
 		xwayland, _ := json.Marshal(xwayland())
 		volume, _ := json.Marshal(volume())
 		fmt.Printf(",[%s,%s,%s,%s]\n", xwayland, muted, volume, date)
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond)
 	}
 }
 
