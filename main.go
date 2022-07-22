@@ -76,10 +76,10 @@ func muted() panel {
 	return NewBadPanel("muted", "error")
 }
 
-func volume() panel {
+func readVolume() (int64, error) {
 	out, err := exec.Command("pactl", "get-sink-volume", "@DEFAULT_SINK@").Output()
 	if err != nil {
-		return NewBadPanel("volume", "error")
+		return 0, err
 	}
 
 	format := "Volume: front-left: %d / %d%% / %f dB, front-right: %d / %d%% / %f dB \n balance %f"
@@ -89,10 +89,19 @@ func volume() panel {
 
 	_, err = fmt.Sscanf(string(out), format, &fla, &flp, &flo, &fra, &frp, &fro, &balance)
 	if err != nil {
+		return 0, err
+	}
+
+	return flp, nil
+}
+
+func volume() panel {
+	vol, err := readVolume()
+	if err != nil {
 		return NewBadPanel("volume", "error")
 	}
 
-	return NewGoodPanel("volume", fmt.Sprintf("VOL: %d%%", flp))
+	return NewGoodPanel("volume", fmt.Sprintf("VOL: %d%%", vol))
 }
 
 func xwayland() panel {
