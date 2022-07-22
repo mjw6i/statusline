@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os/exec"
@@ -38,7 +39,8 @@ func main() {
 	for {
 		date, _ := json.Marshal(date())
 		muted, _ := json.Marshal(muted())
-		fmt.Printf(",[%s%s]\n", muted, date)
+		xwayland, _ := json.Marshal(xwayland())
+		fmt.Printf(",[%s%s%s]\n", xwayland, muted, date)
 		time.Sleep(3 * 1000 * time.Millisecond)
 	}
 }
@@ -71,4 +73,20 @@ func muted() panel {
 	}
 
 	return NewBadPanel("muted", "error")
+}
+
+func xwayland() panel {
+	err := exec.Command("pidof", "Xwayland").Run()
+	if err != nil {
+		var eerr *exec.ExitError
+		if errors.As(err, &eerr) {
+			ec := eerr.ProcessState.ExitCode()
+			if ec == 1 {
+				return NewGoodPanel("xwayland", "")
+			}
+		}
+		return NewBadPanel("xwayland", "error")
+	}
+
+	return NewBadPanel("xwayland", " xwayland ")
 }
