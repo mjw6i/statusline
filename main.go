@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -14,6 +16,14 @@ type version struct {
 type panel struct {
 	Name string `json:"name"`
 	Text string `json:"full_text"`
+}
+
+func NewGoodPanel(name string, text string) panel {
+	return panel{name, text}
+}
+
+func NewBadPanel(name string, text string) panel {
+	return panel{name, text}
 }
 
 func main() {
@@ -33,5 +43,13 @@ func main() {
 }
 
 func date() panel {
-	return panel{"date", "hello"}
+	out, err := exec.Command("date", "+[%a] %Y-%m-%d %H:%M:%S").Output()
+	if err != nil {
+		return NewBadPanel("date", "error")
+	}
+
+	res := string(out)
+	res = strings.TrimSuffix(res, "\n")
+
+	return NewGoodPanel("date", res)
 }
