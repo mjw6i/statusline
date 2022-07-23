@@ -30,16 +30,26 @@ func main() {
 	go func() {
 		for {
 			l_muted, _ := json.Marshal(muted())
-			l_xwayland, _ := json.Marshal(xwayland())
 			l_volume, _ := json.Marshal(volume())
 
 			lock.Lock()
 			g_muted = l_muted
-			g_xwayland = l_xwayland
 			g_volume = l_volume
 			lock.Unlock()
 
 			time.Sleep(1000 * time.Millisecond)
+		}
+	}()
+
+	go func() {
+		for {
+			l_xwayland, _ := json.Marshal(xwayland())
+
+			lock.Lock()
+			g_xwayland = l_xwayland
+			lock.Unlock()
+
+			time.Sleep(1 * time.Minute)
 		}
 	}()
 
