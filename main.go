@@ -53,13 +53,7 @@ func main() {
 }
 
 func date() panel {
-	out, err := exec.Command("date", "+[%a] %Y-%m-%d %H:%M:%S").Output()
-	if err != nil {
-		return NewBadPanel("date", "error")
-	}
-
-	res := string(out)
-	res = strings.TrimSuffix(res, "\n")
+	res := time.Now().Format("[Mon] 2006-01-02 15:04:05")
 
 	return NewGoodPanel("date", res)
 }
