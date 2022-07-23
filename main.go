@@ -22,19 +22,19 @@ func main() {
 	ver, _ := json.Marshal(version{1})
 	fmt.Printf("%s\n[\n[]\n", ver)
 
-	g_muted, _ := json.Marshal(NewGoodPanel("muted", ""))
-	g_xwayland, _ := json.Marshal(NewGoodPanel("xwayland", ""))
-	g_volume, _ := json.Marshal(NewGoodPanel("volume", ""))
+	gMuted, _ := json.Marshal(NewGoodPanel("muted", ""))
+	gXwayland, _ := json.Marshal(NewGoodPanel("xwayland", ""))
+	gVolume, _ := json.Marshal(NewGoodPanel("volume", ""))
 	var lock sync.Mutex
 
 	go func() {
 		for {
-			l_muted, _ := json.Marshal(muted())
-			l_volume, _ := json.Marshal(volume())
+			lMuted, _ := json.Marshal(muted())
+			lVolume, _ := json.Marshal(volume())
 
 			lock.Lock()
-			g_muted = l_muted
-			g_volume = l_volume
+			gMuted = lMuted
+			gVolume = lVolume
 			lock.Unlock()
 
 			time.Sleep(1000 * time.Millisecond)
@@ -43,21 +43,21 @@ func main() {
 
 	go func() {
 		for {
-			l_xwayland, _ := json.Marshal(xwayland())
+			lXwayland, _ := json.Marshal(xwayland())
 
 			lock.Lock()
-			g_xwayland = l_xwayland
+			gXwayland = lXwayland
 			lock.Unlock()
 
 			time.Sleep(1 * time.Minute)
 		}
 	}()
 
-	var g_date []byte
+	var gDate []byte
 	for {
-		g_date, _ = json.Marshal(date())
+		gDate, _ = json.Marshal(date())
 		lock.Lock()
-		fmt.Printf(",[%s,%s,%s,%s]\n", g_xwayland, g_muted, g_volume, g_date)
+		fmt.Printf(",[%s,%s,%s,%s]\n", gXwayland, gMuted, gVolume, gDate)
 		lock.Unlock()
 		time.Sleep(100 * time.Millisecond)
 	}
