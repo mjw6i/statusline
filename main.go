@@ -25,9 +25,9 @@ func main() {
 	g_muted, _ := json.Marshal(NewGoodPanel("muted", ""))
 	g_xwayland, _ := json.Marshal(NewGoodPanel("xwayland", ""))
 	g_volume, _ := json.Marshal(NewGoodPanel("volume", ""))
-	lock := &sync.Mutex{}
+	var lock sync.Mutex
 
-	update := func() {
+	go func() {
 		for {
 			l_muted, _ := json.Marshal(muted())
 			l_xwayland, _ := json.Marshal(xwayland())
@@ -41,9 +41,8 @@ func main() {
 
 			time.Sleep(1000 * time.Millisecond)
 		}
-	}
+	}()
 
-	go update()
 	var g_date []byte
 	for {
 		g_date, _ = json.Marshal(date())
