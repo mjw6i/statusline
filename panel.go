@@ -9,8 +9,8 @@ type panel struct {
 	Text                string `json:"full_text"`
 	Background          string `json:"background,omitempty"`
 	Color               string `json:"color,omitempty"`
-	Separator           bool   `json:"separator" default:false`
-	SeparatorBlockWidth int    `json:"separator_block_width" default:0`
+	Separator           bool   `json:"separator"`
+	SeparatorBlockWidth int    `json:"separator_block_width"`
 }
 
 func NewGoodPanel(name string, text string) panel {
