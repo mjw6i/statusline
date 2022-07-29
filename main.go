@@ -26,21 +26,28 @@ func main() {
 	gVolume, _ := json.Marshal(NewGoodPanel("volume", ""))
 	var gDate []byte
 
-	tPulse := time.Tick(1 * time.Second)
-	tXwayland := time.Tick(1 * time.Minute)
-	tDate := time.Tick(100 * time.Millisecond)
+	tPulse := time.Now()
+	tXwayland := time.Now()
+
+	var t time.Time
 
 	for {
-		select {
-		case <-tPulse:
+		t = time.Now()
+
+		switch {
+		case tPulse.After(t):
+			tPulse = t.Add(1 * time.Second)
 			gMuted, _ = json.Marshal(muted())
 			gVolume, _ = json.Marshal(volume())
-		case <-tXwayland:
+		case tXwayland.After(t):
+			tXwayland = t.Add(1 * time.Minute)
 			gXwayland, _ = json.Marshal(xwayland())
-		case <-tDate:
 		}
+
 		gDate, _ = json.Marshal(date())
 		fmt.Printf(",[%s,%s,%s,%s]\n", gXwayland, gMuted, gVolume, gDate)
+
+		time.Sleep(time.Until(t.Add(100 * time.Millisecond)))
 	}
 }
 
