@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -25,41 +24,23 @@ func main() {
 	gMuted, _ := json.Marshal(NewGoodPanel("muted", ""))
 	gXwayland, _ := json.Marshal(NewGoodPanel("xwayland", ""))
 	gVolume, _ := json.Marshal(NewGoodPanel("volume", ""))
-	var lock sync.Mutex
-
-	go func() {
-		for {
-			lMuted, _ := json.Marshal(muted())
-			lVolume, _ := json.Marshal(volume())
-
-			lock.Lock()
-			gMuted = lMuted
-			gVolume = lVolume
-			lock.Unlock()
-
-			time.Sleep(1000 * time.Millisecond)
-		}
-	}()
-
-	go func() {
-		for {
-			lXwayland, _ := json.Marshal(xwayland())
-
-			lock.Lock()
-			gXwayland = lXwayland
-			lock.Unlock()
-
-			time.Sleep(1 * time.Minute)
-		}
-	}()
-
 	var gDate []byte
+
+	tPulse := time.Tick(1 * time.Second)
+	tXwayland := time.Tick(1 * time.Minute)
+	tDate := time.Tick(100 * time.Millisecond)
+
 	for {
+		select {
+		case <-tPulse:
+			gMuted, _ = json.Marshal(muted())
+			gVolume, _ = json.Marshal(volume())
+		case <-tXwayland:
+			gXwayland, _ = json.Marshal(xwayland())
+		case <-tDate:
+		}
 		gDate, _ = json.Marshal(date())
-		lock.Lock()
 		fmt.Printf(",[%s,%s,%s,%s]\n", gXwayland, gMuted, gVolume, gDate)
-		lock.Unlock()
-		time.Sleep(100 * time.Millisecond)
 	}
 }
 
