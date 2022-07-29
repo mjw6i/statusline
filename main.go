@@ -6,12 +6,18 @@ import (
 	"flag"
 	"fmt"
 	"os/exec"
+	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
 )
 
-var recentVolume = []int64{0, 0, 0, 0, 0}
 var base, accent string
+
+func init() {
+	debug.SetGCPercent(20)
+	runtime.GOMAXPROCS(1)
+}
 
 func main() {
 	flag.StringVar(&base, "base", "#000000", "base color")
@@ -25,6 +31,7 @@ func main() {
 	gXwayland, _ := json.Marshal(NewGoodPanel("xwayland", ""))
 	gVolume, _ := json.Marshal(NewGoodPanel("volume", ""))
 	var gDate []byte
+	var recentVolume = []int64{0, 0, 0, 0, 0}
 
 	tPulse := time.Now()
 	tXwayland := time.Now()
@@ -38,7 +45,7 @@ func main() {
 		case tPulse.After(t):
 			tPulse = t.Add(1 * time.Second)
 			gMuted, _ = json.Marshal(muted())
-			gVolume, _ = json.Marshal(volume())
+			gVolume, _ = json.Marshal(volume(&recentVolume))
 		case tXwayland.After(t):
 			tXwayland = t.Add(1 * time.Minute)
 			gXwayland, _ = json.Marshal(xwayland())
@@ -94,18 +101,18 @@ func readVolume() (int64, error) {
 	return flp, nil
 }
 
-func volume() panel {
+func volume(recentVolume *[]int64) panel {
 	vol, err := readVolume()
 	if err != nil {
 		return NewBadPanel("volume", "error")
 	}
 
-	recentVolume = recentVolume[1:]
-	recentVolume = append(recentVolume, vol)
+	*recentVolume = (*recentVolume)[1:]
+	*recentVolume = append(*recentVolume, vol)
 
-	f := recentVolume[0]
+	f := (*recentVolume)[0]
 	c := false
-	for _, v := range recentVolume[1:] {
+	for _, v := range (*recentVolume)[1:] {
 		if f != v {
 			c = true
 			break
