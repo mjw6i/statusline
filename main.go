@@ -42,11 +42,11 @@ func main() {
 		t = time.Now()
 
 		switch {
-		case tPulse.After(t):
+		case t.After(tPulse):
 			tPulse = t.Add(1 * time.Second)
 			gMuted, _ = json.Marshal(muted())
 			gVolume, _ = json.Marshal(volume(&recentVolume))
-		case tXwayland.After(t):
+		case t.After(tXwayland):
 			tXwayland = t.Add(1 * time.Minute)
 			gXwayland, _ = json.Marshal(xwayland())
 		}
