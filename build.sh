@@ -1,4 +1,4 @@
 #/bin/sh
 
-go build -ldflags="-s -w" -o statusline
+go build -gcflags="-m" -ldflags="-s -w" -o statusline
 upx statusline
