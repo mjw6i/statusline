@@ -42,7 +42,7 @@ func main() {
 		t = time.Now()
 
 		switch {
-		case t.After(tPulse): // each of those create a timer that leaks, fires, then gets collected
+		case t.After(tPulse):
 			tPulse = t.Add(1 * time.Second)
 			gMuted, _ = json.Marshal(muted())
 			gVolume, _ = json.Marshal(volume(&recentVolume))
