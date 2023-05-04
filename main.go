@@ -31,7 +31,7 @@ func main() {
 	gXwayland, _ := json.Marshal(NewGoodPanel("xwayland", ""))
 	gVolume, _ := json.Marshal(NewGoodPanel("volume", ""))
 	var gDate []byte
-	var recentVolume = []int64{0, 0, 0, 0, 0}
+	recentVolume := NewRing()
 
 	tPulse := time.Now()
 	tXwayland := time.Now()
@@ -45,7 +45,7 @@ func main() {
 		case t.After(tPulse):
 			tPulse = t.Add(1 * time.Second)
 			gMuted, _ = json.Marshal(muted())
-			gVolume, _ = json.Marshal(volume(&recentVolume))
+			gVolume, _ = json.Marshal(volume(recentVolume))
 		case t.After(tXwayland):
 			tXwayland = t.Add(1 * time.Minute)
 			gXwayland, _ = json.Marshal(xwayland())
@@ -101,25 +101,15 @@ func readVolume() (int64, error) {
 	return flp, nil
 }
 
-func volume(recentVolume *[]int64) panel {
+func volume(r *ring) panel {
 	vol, err := readVolume()
 	if err != nil {
 		return NewBadPanel("volume", "error")
 	}
 
-	*recentVolume = (*recentVolume)[1:]
-	*recentVolume = append(*recentVolume, vol)
+	r.Push(vol)
 
-	f := (*recentVolume)[0]
-	c := false
-	for _, v := range (*recentVolume)[1:] {
-		if f != v {
-			c = true
-			break
-		}
-	}
-
-	if !c {
+	if !r.Same() {
 		return NewGoodPanel("volume", "")
 	}
 
