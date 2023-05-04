@@ -109,7 +109,7 @@ func volume(r *ring) panel {
 
 	r.Push(vol)
 
-	if !r.Same() {
+	if r.Same() {
 		return NewGoodPanel("volume", "")
 	}
 
