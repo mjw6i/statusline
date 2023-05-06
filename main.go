@@ -31,7 +31,7 @@ func main() {
 	gXwayland, _ := json.Marshal(NewGoodPanel("xwayland", ""))
 	gVolume, _ := json.Marshal(NewGoodPanel("volume", ""))
 	var gDate []byte
-	recentVolume := NewRing()
+	recentVolume := &vol{}
 
 	tPulse := time.Now()
 	tXwayland := time.Now()
@@ -101,15 +101,15 @@ func readVolume() (int64, error) {
 	return flp, nil
 }
 
-func volume(r *ring) panel {
+func volume(v *vol) panel {
 	vol, err := readVolume()
 	if err != nil {
 		return NewBadPanel("volume", "error")
 	}
 
-	r.Push(vol)
+	v.Push(vol)
 
-	if r.Same() {
+	if v.Same() {
 		return NewGoodPanel("volume", "")
 	}
 
