@@ -121,7 +121,7 @@ func xwayland() panel {
 	if err != nil {
 		var eerr *exec.ExitError
 		if errors.As(err, &eerr) {
-			ec := eerr.ProcessState.ExitCode()
+			ec := eerr.ExitCode()
 			if ec == 1 {
 				return NewGoodPanel("xwayland", "")
 			}
