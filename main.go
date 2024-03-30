@@ -8,15 +8,84 @@ import (
 	"log"
 	"os/exec"
 	"runtime"
-	"runtime/debug"
 	"time"
 )
 
 var base, accent string
 
 func init() {
-	debug.SetGCPercent(20)
+	// debug.SetGCPercent(20)
 	runtime.GOMAXPROCS(1)
+}
+
+func main() {
+	flag.StringVar(&base, "base", "#000000", "base color")
+	flag.StringVar(&accent, "accent", "#000000", "accent color")
+	flag.Parse()
+
+	updateMic := make(chan struct{})
+	updateVolume := make(chan struct{})
+	go subscribe(updateMic, updateVolume)
+	go func() {
+		updateMic <- struct{}{}
+		updateVolume <- struct{}{}
+	}()
+
+	ver, err := json.Marshal(version{1})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s\n[\n[]\n", ver)
+
+	gMuted, err := json.Marshal(NewGoodPanel("muted", ""))
+	if err != nil {
+		log.Fatal(err)
+	}
+	gXwayland, err := json.Marshal(NewGoodPanel("xwayland", ""))
+	if err != nil {
+		log.Fatal(err)
+	}
+	gDate, _ := json.Marshal(date())
+	var vol, newVol int64
+	var volErr, newVolErr error
+	gVolume, _ := json.Marshal(volume(vol, volErr, true))
+
+	tXwayland := time.NewTicker(time.Minute)
+	defer tXwayland.Stop()
+
+	tTime := time.NewTicker(time.Second)
+	defer tTime.Stop()
+
+	hideVolumeDuration := 5 * time.Second
+	tHideVolume := time.NewTicker(hideVolumeDuration)
+	tHideVolume.Stop()
+	defer tHideVolume.Stop()
+
+	for {
+		select {
+		case <-updateMic:
+			gMuted, _ = json.Marshal(getMics())
+		case <-updateVolume:
+			newVol, newVolErr = readVolume()
+			if newVol != vol || newVolErr != volErr {
+				vol = newVol
+				volErr = newVolErr
+				tHideVolume.Reset(hideVolumeDuration)
+			}
+			gVolume, _ = json.Marshal(volume(vol, volErr, false))
+		case <-tHideVolume.C:
+			// should that be a timer not a ticker?
+			tHideVolume.Stop()
+			gVolume, _ = json.Marshal(volume(vol, volErr, true))
+
+		case <-tXwayland.C:
+			gXwayland, _ = json.Marshal(xwayland())
+		case <-tTime.C:
+			gDate, _ = json.Marshal(date())
+		}
+
+		fmt.Printf(",[%s,%s,%s,%s]\n", gXwayland, gMuted, gVolume, gDate)
+	}
 }
 
 func subscribe(updateMic, updateVolume chan<- struct{}) {
@@ -86,65 +155,6 @@ func getMics() panel {
 	return NewBadPanel("mics", " not muted ")
 }
 
-func main() {
-	flag.StringVar(&base, "base", "#000000", "base color")
-	flag.StringVar(&accent, "accent", "#000000", "accent color")
-	flag.Parse()
-
-	updateMic := make(chan struct{})
-	updateVolume := make(chan struct{})
-	go subscribe(updateMic, updateVolume)
-	go func() {
-		updateMic <- struct{}{}
-		updateVolume <- struct{}{}
-	}()
-
-	ver, err := json.Marshal(version{1})
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("%s\n[\n[]\n", ver)
-
-	gMuted, err := json.Marshal(NewGoodPanel("muted", ""))
-	if err != nil {
-		log.Fatal(err)
-	}
-	gXwayland, err := json.Marshal(NewGoodPanel("xwayland", ""))
-	if err != nil {
-		log.Fatal(err)
-	}
-	var gVolume []byte
-	var gDate []byte
-	var volume int64
-	volumeUpdate := time.Now()
-	var volumeErr error
-
-	tXwayland := time.NewTicker(time.Minute)
-	defer tXwayland.Stop()
-
-	tTime := time.NewTicker(time.Second)
-	defer tTime.Stop()
-
-	for {
-		select {
-		case <-updateMic:
-			gMuted, _ = json.Marshal(getMics())
-		case <-updateVolume:
-			volumeUpdate = time.Now()
-			volume, volumeErr = readVolume()
-		case <-tXwayland.C:
-			gXwayland, _ = json.Marshal(xwayland())
-		case <-tTime.C:
-			gDate, _ = json.Marshal(date())
-		}
-
-		// refreshed more often than necessary
-		gVolume, _ = json.Marshal(volumef(volume, volumeErr, volumeUpdate))
-
-		fmt.Printf(",[%s,%s,%s,%s]\n", gXwayland, gMuted, gVolume, gDate)
-	}
-}
-
 func date() panel {
 	res := time.Now().Format("[Mon] 2006-01-02 15:04:05")
 
@@ -170,12 +180,12 @@ func readVolume() (int64, error) {
 	return flp, nil
 }
 
-func volumef(vol int64, volErr error, update time.Time) panel {
-	if volErr != nil {
+func volume(vol int64, err error, hide bool) panel {
+	if err != nil {
 		return NewBadPanel("volume", "error")
 	}
 
-	if time.Now().After(update.Add(time.Second * 5)) {
+	if hide {
 		return NewGoodPanel("volume", "")
 	}
 
