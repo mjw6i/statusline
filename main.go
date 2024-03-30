@@ -1,13 +1,17 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -45,6 +49,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	gIP, err := json.Marshal(NewGoodPanel("ip", ""))
+	if err != nil {
+		log.Fatal(err)
+	}
 	gDate, _ := json.Marshal(date())
 	var vol, newVol int64
 	var volErr, newVolErr error
@@ -55,6 +63,9 @@ func main() {
 
 	tTime := time.NewTicker(time.Second)
 	defer tTime.Stop()
+
+	tIP := time.NewTicker(time.Minute)
+	defer tIP.Stop()
 
 	hideVolumeDuration := 5 * time.Second
 	tHideVolume := time.NewTicker(hideVolumeDuration)
@@ -80,11 +91,13 @@ func main() {
 
 		case <-tXwayland.C:
 			gXwayland, _ = json.Marshal(xwayland())
+		case <-tIP.C:
+			gIP, _ = json.Marshal(getListeningIP())
 		case <-tTime.C:
 			gDate, _ = json.Marshal(date())
 		}
 
-		fmt.Printf(",[%s,%s,%s,%s]\n", gXwayland, gMuted, gVolume, gDate)
+		fmt.Printf(",[%s,%s,%s,%s,%s]\n", gIP, gXwayland, gMuted, gVolume, gDate)
 	}
 }
 
@@ -121,6 +134,61 @@ func subscribe(updateMic, updateVolume chan<- struct{}) {
 			updateVolume <- struct{}{}
 		}
 	}
+}
+
+func getListeningIP() panel {
+	loopback := true
+	out, err := exec.Command("netstat", "--numeric", "--wide", "-tl").Output()
+	if err != nil {
+		return NewBadPanel("ip", "error")
+	}
+
+	r := bytes.NewReader(out)
+	s := bufio.NewScanner(r)
+
+	var proto string
+	var recv, send int64
+	var local, peer string
+	var ip net.IP
+	format := "%s %d %d %s %s"
+
+	skip := 2
+	var index int
+	for s.Scan() {
+		if skip > 0 {
+			skip--
+			continue
+		}
+		// new lines could be handled by fmt, without scanner
+		_, err = fmt.Sscanf(s.Text(), format, &proto, &recv, &send, &local, &peer)
+		if err != nil || (proto != "tcp" && proto != "tcp6") {
+			return NewBadPanel("ip", " ip error ")
+		}
+
+		index = strings.LastIndexByte(local, ':')
+		if index != -1 {
+			local = local[:index]
+		}
+		ip = net.ParseIP(local)
+
+		if ip == nil {
+			return NewBadPanel("ip", " ip error ")
+		}
+
+		if !ip.IsLoopback() {
+			loopback = false
+		}
+	}
+
+	if s.Err() != nil {
+		return NewBadPanel("ip", " ip error ")
+	}
+
+	if !loopback {
+		return NewBadPanel("ip", " non loopback listener ")
+	}
+
+	return NewGoodPanel("ip", "")
 }
 
 func getMics() panel {
