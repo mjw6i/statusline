@@ -5,10 +5,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"os/exec"
 	"runtime"
 	"runtime/debug"
-	"strings"
 	"time"
 )
 
@@ -19,42 +19,129 @@ func init() {
 	runtime.GOMAXPROCS(1)
 }
 
+func subscribe(updateMic, updateVolume chan<- struct{}) {
+	// use interruptable command to clean exit
+	cmd := exec.Command("pactl", "--format=json", "subscribe")
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = cmd.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	decoder := json.NewDecoder(out)
+
+	type event struct {
+		Event string
+		On    string
+	}
+
+	for decoder.More() {
+		var e event
+		err = decoder.Decode(&e)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		switch e.On {
+		case "source":
+			updateMic <- struct{}{}
+		case "sink":
+			updateVolume <- struct{}{}
+		}
+	}
+}
+
+func getMics() panel {
+	out, err := exec.Command("pactl", "--format=json", "list", "short", "sinks").Output()
+	if err != nil {
+		return NewBadPanel("mics", "error")
+	}
+
+	type sink struct {
+		Index int
+		Mute  bool
+	}
+
+	var s []sink
+	err = json.Unmarshal(out, &s)
+	if err != nil {
+		return NewBadPanel("mics", "error")
+	}
+
+	if len(s) == 0 {
+		return NewGoodPanel("mics", "")
+	}
+
+	if len(s) > 1 {
+		return NewBadPanel("mics", " multiple mics ")
+	}
+
+	if s[0].Mute {
+		return NewGoodPanel("mics", "")
+	}
+
+	return NewBadPanel("mics", " not muted ")
+}
+
 func main() {
 	flag.StringVar(&base, "base", "#000000", "base color")
 	flag.StringVar(&accent, "accent", "#000000", "accent color")
 	flag.Parse()
 
-	ver, _ := json.Marshal(version{1})
+	updateMic := make(chan struct{})
+	updateVolume := make(chan struct{})
+	go subscribe(updateMic, updateVolume)
+	go func() {
+		updateMic <- struct{}{}
+		updateVolume <- struct{}{}
+	}()
+
+	ver, err := json.Marshal(version{1})
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Printf("%s\n[\n[]\n", ver)
 
-	gMuted, _ := json.Marshal(NewGoodPanel("muted", ""))
-	gXwayland, _ := json.Marshal(NewGoodPanel("xwayland", ""))
-	gVolume, _ := json.Marshal(NewGoodPanel("volume", ""))
+	gMuted, err := json.Marshal(NewGoodPanel("muted", ""))
+	if err != nil {
+		log.Fatal(err)
+	}
+	gXwayland, err := json.Marshal(NewGoodPanel("xwayland", ""))
+	if err != nil {
+		log.Fatal(err)
+	}
+	var gVolume []byte
 	var gDate []byte
-	recentVolume := &vol{}
+	var volume int64
+	volumeUpdate := time.Now()
+	var volumeErr error
 
-	tPulse := time.Now()
-	tXwayland := time.Now()
+	tXwayland := time.NewTicker(time.Minute)
+	defer tXwayland.Stop()
 
-	var t time.Time
+	tTime := time.NewTicker(time.Second)
+	defer tTime.Stop()
 
 	for {
-		t = time.Now()
-
-		switch {
-		case t.After(tPulse):
-			tPulse = t.Add(1 * time.Second)
-			gMuted, _ = json.Marshal(muted())
-			gVolume, _ = json.Marshal(volume(recentVolume))
-		case t.After(tXwayland):
-			tXwayland = t.Add(1 * time.Minute)
+		select {
+		case <-updateMic:
+			gMuted, _ = json.Marshal(getMics())
+		case <-updateVolume:
+			volumeUpdate = time.Now()
+			volume, volumeErr = readVolume()
+		case <-tXwayland.C:
 			gXwayland, _ = json.Marshal(xwayland())
+		case <-tTime.C:
+			gDate, _ = json.Marshal(date())
 		}
 
-		gDate, _ = json.Marshal(date())
-		fmt.Printf(",[%s,%s,%s,%s]\n", gXwayland, gMuted, gVolume, gDate)
+		// refreshed more often than necessary
+		gVolume, _ = json.Marshal(volumef(volume, volumeErr, volumeUpdate))
 
-		time.Sleep(time.Until(t.Add(100 * time.Millisecond)))
+		fmt.Printf(",[%s,%s,%s,%s]\n", gXwayland, gMuted, gVolume, gDate)
 	}
 }
 
@@ -62,24 +149,6 @@ func date() panel {
 	res := time.Now().Format("[Mon] 2006-01-02 15:04:05")
 
 	return NewGoodPanel("date", res)
-}
-
-func muted() panel {
-	out, err := exec.Command("pactl", "get-source-mute", "@DEFAULT_SOURCE@").Output()
-	if err != nil {
-		return NewBadPanel("muted", "error")
-	}
-
-	res := string(out)
-	res = strings.TrimSuffix(res, "\n")
-
-	if res == "Mute: yes" {
-		return NewGoodPanel("muted", "")
-	} else if res == "Mute: no" {
-		return NewBadPanel("muted", " not muted ")
-	}
-
-	return NewBadPanel("muted", "error")
 }
 
 func readVolume() (int64, error) {
@@ -101,15 +170,12 @@ func readVolume() (int64, error) {
 	return flp, nil
 }
 
-func volume(v *vol) panel {
-	vol, err := readVolume()
-	if err != nil {
+func volumef(vol int64, volErr error, update time.Time) panel {
+	if volErr != nil {
 		return NewBadPanel("volume", "error")
 	}
 
-	v.Push(vol)
-
-	if v.Same() {
+	if time.Now().After(update.Add(time.Second * 5)) {
 		return NewGoodPanel("volume", "")
 	}
 
