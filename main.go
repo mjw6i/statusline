@@ -71,8 +71,8 @@ func main() {
 				vol = newVol
 				volErr = newVolErr
 				tHideVolume.Reset(hideVolumeDuration)
+				gVolume, _ = json.Marshal(volume(vol, volErr, false))
 			}
-			gVolume, _ = json.Marshal(volume(vol, volErr, false))
 		case <-tHideVolume.C:
 			// should that be a timer not a ticker?
 			tHideVolume.Stop()
@@ -124,31 +124,44 @@ func subscribe(updateMic, updateVolume chan<- struct{}) {
 }
 
 func getMics() panel {
-	out, err := exec.Command("pactl", "--format=json", "list", "short", "sinks").Output()
+	out, err := exec.Command("pactl", "--format=json", "list", "sources").Output()
 	if err != nil {
 		return NewBadPanel("mics", "error")
 	}
 
-	type sink struct {
-		Index int
-		Mute  bool
+	type source struct {
+		Properties struct {
+			DeviceClass string `json:"device.class"`
+		}
+		Mute bool
 	}
 
-	var s []sink
-	err = json.Unmarshal(out, &s)
+	var sources []source
+	err = json.Unmarshal(out, &sources)
 	if err != nil {
 		return NewBadPanel("mics", "error")
 	}
 
-	if len(s) == 0 {
+	var count int
+	var muted bool
+
+	for _, s := range sources {
+		if s.Properties.DeviceClass == "monitor" {
+			continue
+		}
+		count++
+		muted = s.Mute
+	}
+
+	if count == 0 {
 		return NewGoodPanel("mics", "")
 	}
 
-	if len(s) > 1 {
+	if count > 1 {
 		return NewBadPanel("mics", " multiple mics ")
 	}
 
-	if s[0].Mute {
+	if muted {
 		return NewGoodPanel("mics", "")
 	}
 
