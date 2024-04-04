@@ -91,6 +91,16 @@ func getSources() panel {
 	return NewBadPanel("mics", " not muted ")
 }
 
+var pactl string
+
+func init() {
+	var err error
+	pactl, err = exec.LookPath("pactl")
+	if err != nil {
+		panic(err)
+	}
+}
+
 type Sound struct {
 	buffer bytes.Buffer
 }
@@ -98,7 +108,7 @@ type Sound struct {
 func (s *Sound) GetSinks() (int, error) {
 	defer s.buffer.Reset()
 	var flp, frp int
-	cmd := exec.Command("pactl", "--format=json", "list", "sinks")
+	cmd := exec.Command(pactl, "--format=json", "list", "sinks")
 	cmd.Stdout = &s.buffer
 	err := cmd.Run()
 	if err != nil {
