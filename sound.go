@@ -58,6 +58,11 @@ func subscribe(updateMic, updateVolume chan<- struct{}) {
 			updateVolume <- struct{}{}
 		}
 	}
+
+	err = cmd.Wait()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (s *Sound) GetSources() panel {
