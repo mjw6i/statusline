@@ -42,7 +42,7 @@ func subscribe(updateMic, updateVolume chan<- struct{}) {
 	}
 }
 
-func getMics() panel {
+func getSources() panel {
 	out, err := exec.Command("pactl", "--format=json", "list", "sources").Output()
 	if err != nil {
 		return NewBadPanel("mics", "error")
@@ -87,7 +87,7 @@ func getMics() panel {
 	return NewBadPanel("mics", " not muted ")
 }
 
-func readVolume() (int64, error) {
+func getSinks() (int64, error) {
 	out, err := exec.Command("pactl", "get-sink-volume", "@DEFAULT_SINK@").Output()
 	if err != nil {
 		return 0, err

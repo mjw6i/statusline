@@ -69,9 +69,9 @@ func main() {
 	for {
 		select {
 		case <-updateMic:
-			gMuted, _ = json.Marshal(getMics())
+			gMuted, _ = json.Marshal(getSources())
 		case <-updateVolume:
-			newVol, newVolErr = readVolume()
+			newVol, newVolErr = getSinks()
 			if newVol != vol || newVolErr != volErr {
 				vol = newVol
 				volErr = newVolErr
