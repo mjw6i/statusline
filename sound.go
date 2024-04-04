@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -92,7 +93,10 @@ func getSources() panel {
 
 func getSinks() (int, error) {
 	var flp, frp int
-	out, err := exec.Command("pactl", "--format=json", "list", "sinks").Output()
+	cmd := exec.Command("pactl", "--format=json", "list", "sinks")
+	var b bytes.Buffer
+	cmd.Stdout = &b
+	err := cmd.Run()
 	if err != nil {
 		return 0, err
 	}
@@ -110,7 +114,7 @@ func getSinks() (int, error) {
 	}
 
 	var sinks []sink
-	err = json.Unmarshal(out, &sinks)
+	err = json.Unmarshal(b.Bytes(), &sinks)
 	if err != nil {
 		return 0, err
 	}
