@@ -1,17 +1,12 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"os/exec"
 	"runtime"
-	"strings"
 	"time"
 )
 
@@ -136,61 +131,6 @@ func subscribe(updateMic, updateVolume chan<- struct{}) {
 	}
 }
 
-func getListeningIP() panel {
-	loopback := true
-	out, err := exec.Command("netstat", "--numeric", "--wide", "-tl").Output()
-	if err != nil {
-		return NewBadPanel("ip", "error")
-	}
-
-	r := bytes.NewReader(out)
-	s := bufio.NewScanner(r)
-
-	var proto string
-	var recv, send int64
-	var local, peer string
-	var ip net.IP
-	format := "%s %d %d %s %s"
-
-	skip := 2
-	var index int
-	for s.Scan() {
-		if skip > 0 {
-			skip--
-			continue
-		}
-		// new lines could be handled by fmt, without scanner
-		_, err = fmt.Sscanf(s.Text(), format, &proto, &recv, &send, &local, &peer)
-		if err != nil || (proto != "tcp" && proto != "tcp6") {
-			return NewBadPanel("ip", " ip error ")
-		}
-
-		index = strings.LastIndexByte(local, ':')
-		if index != -1 {
-			local = local[:index]
-		}
-		ip = net.ParseIP(local)
-
-		if ip == nil {
-			return NewBadPanel("ip", " ip error ")
-		}
-
-		if !ip.IsLoopback() {
-			loopback = false
-		}
-	}
-
-	if s.Err() != nil {
-		return NewBadPanel("ip", " ip error ")
-	}
-
-	if !loopback {
-		return NewBadPanel("ip", " non loopback listener ")
-	}
-
-	return NewGoodPanel("ip", "")
-}
-
 func getMics() panel {
 	out, err := exec.Command("pactl", "--format=json", "list", "sources").Output()
 	if err != nil {
@@ -236,12 +176,6 @@ func getMics() panel {
 	return NewBadPanel("mics", " not muted ")
 }
 
-func date() panel {
-	res := time.Now().Format("[Mon] 2006-01-02 15:04:05")
-
-	return NewGoodPanel("date", res)
-}
-
 func readVolume() (int64, error) {
 	out, err := exec.Command("pactl", "get-sink-volume", "@DEFAULT_SINK@").Output()
 	if err != nil {
@@ -271,20 +205,4 @@ func volume(vol int64, err error, hide bool) panel {
 	}
 
 	return NewGoodPanel("volume", fmt.Sprintf(" VOL: %d%% ", vol))
-}
-
-func xwayland() panel {
-	err := exec.Command("pidof", "Xwayland").Run()
-	if err != nil {
-		var eerr *exec.ExitError
-		if errors.As(err, &eerr) {
-			ec := eerr.ExitCode()
-			if ec == 1 {
-				return NewGoodPanel("xwayland", "")
-			}
-		}
-		return NewBadPanel("xwayland", "error")
-	}
-
-	return NewBadPanel("xwayland", " xwayland ")
 }
