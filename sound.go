@@ -2,9 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os/exec"
+	"strconv"
+	"strings"
 )
 
 func subscribe(updateMic, updateVolume chan<- struct{}) {
@@ -88,22 +91,48 @@ func getSources() panel {
 }
 
 func getSinks() (int64, error) {
-	out, err := exec.Command("pactl", "get-sink-volume", "@DEFAULT_SINK@").Output()
+	var flp, frp int
+	out, err := exec.Command("pactl", "--format=json", "list", "sinks").Output()
 	if err != nil {
 		return 0, err
 	}
 
-	format := "Volume: front-left: %d / %d%% / %f dB, front-right: %d / %d%% / %f dB \n balance %f"
+	type sink struct {
+		Volume struct {
+			FrontLeft struct {
+				P string `json:"value_percent"`
+			} `json:"front-left"`
+			FrontRight struct {
+				P string `json:"value_percent"`
+			} `json:"front-right"`
+		}
+		Mute bool
+	}
 
-	var fla, flp, fra, frp int64
-	var flo, fro, balance float64
-
-	_, err = fmt.Sscanf(string(out), format, &fla, &flp, &flo, &fra, &frp, &fro, &balance)
+	var sinks []sink
+	err = json.Unmarshal(out, &sinks)
 	if err != nil {
 		return 0, err
 	}
 
-	return flp, nil
+	if len(sinks) != 1 {
+		return 0, errors.New("expected one sink")
+	}
+
+	flp, err = strconv.Atoi(strings.TrimSuffix(sinks[0].Volume.FrontLeft.P, "%"))
+	if err != nil {
+		return 0, err
+	}
+	frp, err = strconv.Atoi(strings.TrimSuffix(sinks[0].Volume.FrontRight.P, "%"))
+	if err != nil {
+		return 0, err
+	}
+
+	if flp != frp {
+		return 0, errors.New("uneven channels")
+	}
+
+	return int64(flp), nil
 }
 
 func volume(vol int64, err error, hide bool) panel {
