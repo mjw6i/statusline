@@ -66,12 +66,14 @@ func main() {
 	tHideVolume.Stop()
 	defer tHideVolume.Stop()
 
+	sound := Sound{}
+
 	for {
 		select {
 		case <-updateMic:
 			gMuted, _ = json.Marshal(getSources())
 		case <-updateVolume:
-			newVol, newVolErr = getSinks()
+			newVol, newVolErr = sound.GetSinks()
 			if newVol != vol || newVolErr != volErr {
 				vol = newVol
 				volErr = newVolErr

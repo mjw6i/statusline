@@ -91,11 +91,15 @@ func getSources() panel {
 	return NewBadPanel("mics", " not muted ")
 }
 
-func getSinks() (int, error) {
+type Sound struct {
+	buffer bytes.Buffer
+}
+
+func (s *Sound) GetSinks() (int, error) {
+	defer s.buffer.Reset()
 	var flp, frp int
 	cmd := exec.Command("pactl", "--format=json", "list", "sinks")
-	var b bytes.Buffer
-	cmd.Stdout = &b
+	cmd.Stdout = &s.buffer
 	err := cmd.Run()
 	if err != nil {
 		return 0, err
@@ -114,7 +118,7 @@ func getSinks() (int, error) {
 	}
 
 	var sinks []sink
-	err = json.Unmarshal(b.Bytes(), &sinks)
+	err = json.Unmarshal(s.buffer.Bytes(), &sinks)
 	if err != nil {
 		return 0, err
 	}
