@@ -11,6 +11,20 @@ import (
 	"strings"
 )
 
+var pactl string
+
+func init() {
+	var err error
+	pactl, err = exec.LookPath("pactl")
+	if err != nil {
+		panic(err)
+	}
+}
+
+type Sound struct {
+	buffer bytes.Buffer
+}
+
 func subscribe(updateMic, updateVolume chan<- struct{}) {
 	// use interruptable command to clean exit
 	cmd := exec.Command("pactl", "--format=json", "subscribe")
@@ -89,20 +103,6 @@ func getSources() panel {
 	}
 
 	return NewBadPanel("mics", " not muted ")
-}
-
-var pactl string
-
-func init() {
-	var err error
-	pactl, err = exec.LookPath("pactl")
-	if err != nil {
-		panic(err)
-	}
-}
-
-type Sound struct {
-	buffer bytes.Buffer
 }
 
 func (s *Sound) GetSinks() (int, error) {
