@@ -11,7 +11,7 @@ httpcpu:
 	go tool pprof -http=127.0.0.1:9000 cpu.prof
 
 benchmem:
-	go test -memprofile mem.prof -bench=. -run=^# -count=1 .
+	go test -memprofile mem.prof -bench=. -run=^# -count=1 -benchmem .
 
 httpmem:
 	go tool pprof -http=127.0.0.1:9000 mem.prof

@@ -19,8 +19,10 @@ func BenchmarkGetSinks(b *testing.B) {
 func BenchmarkGetSources(b *testing.B) {
 	var p panel
 
+	s := Sound{}
+
 	for i := 0; i < b.N; i++ {
-		p = GetSources()
+		p = s.GetSources()
 		if p.Color != "" || p.Text != "" {
 			b.Fatalf("%+v\n", p)
 		}

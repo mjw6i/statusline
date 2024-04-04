@@ -60,8 +60,11 @@ func subscribe(updateMic, updateVolume chan<- struct{}) {
 	}
 }
 
-func GetSources() panel {
-	out, err := exec.Command("pactl", "--format=json", "list", "sources").Output()
+func (s *Sound) GetSources() panel {
+	defer s.buffer.Reset()
+	cmd := exec.Command(pactl, "--format=json", "list", "sources")
+	cmd.Stdout = &s.buffer
+	err := cmd.Run()
 	if err != nil {
 		return NewBadPanel("mics", "error")
 	}
@@ -74,7 +77,7 @@ func GetSources() panel {
 	}
 
 	var sources []source
-	err = json.Unmarshal(out, &sources)
+	err = json.Unmarshal(s.buffer.Bytes(), &sources)
 	if err != nil {
 		return NewBadPanel("mics", "error")
 	}
