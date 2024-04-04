@@ -60,7 +60,7 @@ func subscribe(updateMic, updateVolume chan<- struct{}) {
 	}
 }
 
-func getSources() panel {
+func GetSources() panel {
 	out, err := exec.Command("pactl", "--format=json", "list", "sources").Output()
 	if err != nil {
 		return NewBadPanel("mics", "error")

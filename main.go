@@ -71,7 +71,7 @@ func main() {
 	for {
 		select {
 		case <-updateMic:
-			gMuted, _ = json.Marshal(getSources())
+			gMuted, _ = json.Marshal(GetSources())
 		case <-updateVolume:
 			newVol, newVolErr = sound.GetSinks()
 			if newVol != vol || newVolErr != volErr {
