@@ -48,7 +48,7 @@ func main() {
 		log.Fatal(err)
 	}
 	gDate, _ := json.Marshal(date())
-	var vol, newVol int64
+	var vol, newVol int
 	var volErr, newVolErr error
 	gVolume, _ := json.Marshal(volume(vol, volErr, true))
 

@@ -90,7 +90,7 @@ func getSources() panel {
 	return NewBadPanel("mics", " not muted ")
 }
 
-func getSinks() (int64, error) {
+func getSinks() (int, error) {
 	var flp, frp int
 	out, err := exec.Command("pactl", "--format=json", "list", "sinks").Output()
 	if err != nil {
@@ -132,10 +132,10 @@ func getSinks() (int64, error) {
 		return 0, errors.New("uneven channels")
 	}
 
-	return int64(flp), nil
+	return flp, nil
 }
 
-func volume(vol int64, err error, hide bool) panel {
+func volume(vol int, err error, hide bool) panel {
 	if err != nil {
 		return NewBadPanel("volume", "error")
 	}
