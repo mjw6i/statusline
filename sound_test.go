@@ -47,12 +47,12 @@ func BenchmarkEventLoop(b *testing.B) {
 {"index":39689,"event":"new","on":"client"}
 {"index":39689,"event":"remove","on":"client"}`)
 
-	updateMic := make(chan struct{})
-	updateVolume := make(chan struct{})
+	updateSources := make(chan struct{})
+	updateSinks := make(chan struct{})
 
 	r := newLoopReader(data, b.N)
 
-	eventLoop(r, updateMic, updateVolume)
+	eventLoop(r, updateSources, updateSinks)
 }
 
 type loopReader struct {

@@ -47,7 +47,7 @@ func subscribe(updateMic, updateVolume chan<- struct{}) {
 	}
 }
 
-func eventLoop(r io.Reader, updateMic, updateVolume chan<- struct{}) {
+func eventLoop(r io.Reader, updateSources, updateSinks chan<- struct{}) {
 	decoder := json.NewDecoder(r)
 
 	type event struct {
@@ -66,12 +66,12 @@ func eventLoop(r io.Reader, updateMic, updateVolume chan<- struct{}) {
 
 		if slices.Equal(e.On, []byte(`"source"`)) {
 			select {
-			case updateMic <- struct{}{}:
+			case updateSources <- struct{}{}:
 			default:
 			}
 		} else if slices.Equal(e.On, []byte(`"sink"`)) {
 			select {
-			case updateVolume <- struct{}{}:
+			case updateSinks <- struct{}{}:
 			default:
 			}
 		}
