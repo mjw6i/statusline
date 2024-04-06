@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os/exec"
 	"strconv"
@@ -37,7 +38,17 @@ func subscribe(updateMic, updateVolume chan<- struct{}) {
 		log.Fatal(err)
 	}
 
-	decoder := json.NewDecoder(out)
+	eventLoop(out, updateMic, updateVolume)
+
+	err = cmd.Wait()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func eventLoop(r io.Reader, updateMic, updateVolume chan<- struct{}) {
+	var err error
+	decoder := json.NewDecoder(r)
 
 	type event struct {
 		Event string
@@ -53,15 +64,16 @@ func subscribe(updateMic, updateVolume chan<- struct{}) {
 
 		switch e.On {
 		case "source":
-			updateMic <- struct{}{}
+			select {
+			case updateMic <- struct{}{}:
+			default:
+			}
 		case "sink":
-			updateVolume <- struct{}{}
+			select {
+			case updateVolume <- struct{}{}:
+			default:
+			}
 		}
-	}
-
-	err = cmd.Wait()
-	if err != nil {
-		log.Fatal(err)
 	}
 }
 

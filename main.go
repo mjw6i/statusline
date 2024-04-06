@@ -21,13 +21,11 @@ func main() {
 	flag.StringVar(&accent, "accent", "#000000", "accent color")
 	flag.Parse()
 
-	updateMic := make(chan struct{})
-	updateVolume := make(chan struct{})
+	updateMic := make(chan struct{}, 1)
+	updateVolume := make(chan struct{}, 1)
+	updateMic <- struct{}{}
+	updateVolume <- struct{}{}
 	go subscribe(updateMic, updateVolume)
-	go func() {
-		updateMic <- struct{}{}
-		updateVolume <- struct{}{}
-	}()
 
 	ver, err := json.Marshal(version{1})
 	if err != nil {
