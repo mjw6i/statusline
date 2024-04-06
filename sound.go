@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os/exec"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -50,8 +51,8 @@ func eventLoop(r io.Reader, updateMic, updateVolume chan<- struct{}) {
 	decoder := json.NewDecoder(r)
 
 	type event struct {
-		Event string
-		On    string
+		Event json.RawMessage
+		On    json.RawMessage
 	}
 
 	var err error
@@ -63,13 +64,12 @@ func eventLoop(r io.Reader, updateMic, updateVolume chan<- struct{}) {
 			log.Fatal(err)
 		}
 
-		switch e.On {
-		case "source":
+		if slices.Equal(e.On, []byte(`"source"`)) {
 			select {
 			case updateMic <- struct{}{}:
 			default:
 			}
-		case "sink":
+		} else if slices.Equal(e.On, []byte(`"sink"`)) {
 			select {
 			case updateVolume <- struct{}{}:
 			default:
