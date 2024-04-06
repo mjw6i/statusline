@@ -47,7 +47,6 @@ func subscribe(updateMic, updateVolume chan<- struct{}) {
 }
 
 func eventLoop(r io.Reader, updateMic, updateVolume chan<- struct{}) {
-	var err error
 	decoder := json.NewDecoder(r)
 
 	type event struct {
@@ -55,8 +54,10 @@ func eventLoop(r io.Reader, updateMic, updateVolume chan<- struct{}) {
 		On    string
 	}
 
+	var err error
+	var e event
+
 	for decoder.More() {
-		var e event
 		err = decoder.Decode(&e)
 		if err != nil {
 			log.Fatal(err)
