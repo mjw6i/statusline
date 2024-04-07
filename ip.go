@@ -9,9 +9,21 @@ import (
 	"strings"
 )
 
-func getListeningIP() panel {
+var netstat string
+
+func init() {
+	var err error
+	netstat, err = exec.LookPath("netstat")
+	if err != nil {
+		panic(err)
+	}
+}
+
+type IP struct{}
+
+func (i *IP) GetListeningIP() panel {
 	loopback := true
-	out, err := exec.Command("netstat", "--numeric", "--wide", "-tl").Output()
+	out, err := exec.Command(netstat, "--numeric", "--wide", "-tl").Output()
 	if err != nil {
 		return NewBadPanel("ip", "error")
 	}

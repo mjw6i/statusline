@@ -65,6 +65,7 @@ func main() {
 	defer tHideVolume.Stop()
 
 	sound := Sound{}
+	ip := IP{}
 
 	for {
 		select {
@@ -86,7 +87,7 @@ func main() {
 		case <-tXwayland.C:
 			gXwayland, _ = json.Marshal(GetXWayland())
 		case <-tIP.C:
-			gIP, _ = json.Marshal(getListeningIP())
+			gIP, _ = json.Marshal(ip.GetListeningIP())
 		case <-tTime.C:
 			gDate, _ = json.Marshal(date())
 		}
