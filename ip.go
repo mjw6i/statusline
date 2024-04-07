@@ -19,16 +19,21 @@ func init() {
 	}
 }
 
-type IP struct{}
+type IP struct {
+	buffer bytes.Buffer
+}
 
 func (i *IP) GetListeningIP() panel {
+	defer i.buffer.Reset()
 	loopback := true
-	out, err := exec.Command(netstat, "--numeric", "--wide", "-tl").Output()
+	cmd := exec.Command(netstat, "--numeric", "--wide", "-tl")
+	cmd.Stdout = &i.buffer
+	err := cmd.Run()
 	if err != nil {
 		return NewBadPanel("ip", "error")
 	}
 
-	r := bytes.NewReader(out)
+	r := bytes.NewReader(i.buffer.Bytes())
 	s := bufio.NewScanner(r)
 
 	var proto string
