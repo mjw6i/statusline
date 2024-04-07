@@ -84,7 +84,7 @@ func main() {
 			gVolume, _ = json.Marshal(volume(vol, volErr, true))
 
 		case <-tXwayland.C:
-			gXwayland, _ = json.Marshal(xwayland())
+			gXwayland, _ = json.Marshal(GetXWayland())
 		case <-tIP.C:
 			gIP, _ = json.Marshal(getListeningIP())
 		case <-tTime.C:
