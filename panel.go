@@ -1,22 +1,44 @@
 package main
 
+import (
+	"encoding/json"
+)
+
 type version struct {
 	Version int `json:"version"`
 }
 
 type panel struct {
-	Name                string `json:"name"`
-	Text                string `json:"full_text"`
-	Background          string `json:"background,omitempty"`
-	Color               string `json:"color,omitempty"`
-	Separator           bool   `json:"separator"`
-	SeparatorBlockWidth int    `json:"separator_block_width"`
+	Name                string          `json:"name"`
+	Background          string          `json:"background,omitempty"`
+	Color               string          `json:"color,omitempty"`
+	Text                json.RawMessage `json:"full_text"`
+	SeparatorBlockWidth int             `json:"separator_block_width"`
+	Separator           bool            `json:"separator"`
 }
 
 func NewGoodPanel(name string, text string) panel {
+	// temp
+	b := make([]byte, 0, len(text)+2)
+	b = append(b, '"')
+	b = append(b, []byte(text)...)
+	b = append(b, '"')
+	return NewGoodPanelFast(name, b)
+}
+
+func NewGoodPanelFast(name string, text []byte) panel {
 	return panel{Name: name, Text: text}
 }
 
 func NewBadPanel(name string, text string) panel {
+	// temp
+	b := make([]byte, 0, len(text)+2)
+	b = append(b, '"')
+	b = append(b, []byte(text)...)
+	b = append(b, '"')
+	return NewBadPanelFast(name, b)
+}
+
+func NewBadPanelFast(name string, text []byte) panel {
 	return panel{Name: name, Text: text, Color: base, Background: accent}
 }

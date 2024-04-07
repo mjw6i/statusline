@@ -45,7 +45,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	gDate, _ := json.Marshal(date())
+	gDate, _ := json.Marshal(NewGoodPanel("date", ""))
 	var vol, newVol int
 	var volErr, newVolErr error
 	gVolume, _ := json.Marshal(volume(vol, volErr, true))
@@ -66,6 +66,7 @@ func main() {
 
 	sound := Sound{}
 	ip := IP{}
+	date := NewDate()
 
 	for {
 		select {
@@ -89,7 +90,7 @@ func main() {
 		case <-tIP.C:
 			gIP, _ = json.Marshal(ip.GetListeningIP())
 		case <-tTime.C:
-			gDate, _ = json.Marshal(date())
+			gDate, _ = json.Marshal(date.GetDate())
 		}
 
 		fmt.Printf(",[%s,%s,%s,%s,%s]\n", gIP, gXwayland, gMuted, gVolume, gDate)

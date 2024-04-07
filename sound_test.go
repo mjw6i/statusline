@@ -27,7 +27,8 @@ func BenchmarkGetSources(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		p = s.GetSources()
-		if p.Color != "" || p.Text != "" {
+
+		if !slices.Equal(p.Text, []byte(`""`)) {
 			b.Fatalf("%+v\n", p)
 		}
 	}
