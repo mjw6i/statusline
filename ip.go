@@ -1,12 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
-	"fmt"
+	"io"
 	"net"
 	"os/exec"
-	"strings"
+	"slices"
 )
 
 var netstat string
@@ -23,9 +22,39 @@ type IP struct {
 	buffer bytes.Buffer
 }
 
+func processLine(line []byte) (loopback, ok bool) {
+	// expecting a line like
+	// tcp        0      0 127.0.0.1:44159         0.0.0.0:*               LISTEN
+
+	var token int
+	token = bytes.IndexByte(line, ' ')
+	if token == -1 {
+		return false, false
+	}
+	if !slices.Equal(line[:token], []byte("tcp")) && !slices.Equal(line[:token], []byte("tcp6")) {
+		return false, false
+	}
+	line = line[token:]
+	line = bytes.TrimSpace(line)
+	line = bytes.TrimLeft(line, "0123456789")
+	line = bytes.TrimSpace(line)
+	line = bytes.TrimLeft(line, "0123456789")
+	line = bytes.TrimSpace(line)
+	token = bytes.IndexByte(line, ':')
+	if token == -1 {
+		return false, false
+	}
+	line = line[:token]
+	ip := net.ParseIP(string(line))
+	if ip == nil {
+		return false, false
+	}
+
+	return ip.IsLoopback(), true
+}
+
 func (i *IP) GetListeningIP() panel {
 	defer i.buffer.Reset()
-	loopback := true
 	cmd := exec.Command(netstat, "--numeric", "--wide", "-tl")
 	cmd.Stdout = &i.buffer
 	err := cmd.Run()
@@ -33,49 +62,34 @@ func (i *IP) GetListeningIP() panel {
 		return NewBadPanel("ip", "error")
 	}
 
-	r := bytes.NewReader(i.buffer.Bytes())
-	s := bufio.NewScanner(r)
-
-	var proto string
-	var recv, send int64
-	var local, peer string
-	var ip net.IP
-	format := "%s %d %d %s %s"
-
-	skip := 2
-	var index int
-	for s.Scan() {
-		if skip > 0 {
-			skip--
-			continue
-		}
-		// new lines could be handled by fmt, without scanner
-		_, err = fmt.Sscanf(s.Text(), format, &proto, &recv, &send, &local, &peer)
-		if err != nil || (proto != "tcp" && proto != "tcp6") {
-			return NewBadPanel("ip", " ip error ")
-		}
-
-		index = strings.LastIndexByte(local, ':')
-		if index != -1 {
-			local = local[:index]
-		}
-		ip = net.ParseIP(local)
-
-		if ip == nil {
-			return NewBadPanel("ip", " ip error ")
-		}
-
-		if !ip.IsLoopback() {
-			loopback = false
+	// skip two lines
+	for range 2 {
+		_, err = i.buffer.ReadBytes('\n')
+		if err != nil {
+			return NewBadPanel("ip", "error")
 		}
 	}
 
-	if s.Err() != nil {
-		return NewBadPanel("ip", " ip error ")
-	}
+	var line []byte
+	var loopback, ok bool
 
-	if !loopback {
-		return NewBadPanel("ip", " non loopback listener ")
+	for {
+		line, err = i.buffer.ReadBytes('\n')
+		if len(line) > 0 {
+			line = line[:len(line)-1]
+			loopback, ok = processLine(line)
+			if !ok {
+				return NewBadPanel("ip", "error")
+			}
+			if !loopback {
+				return NewBadPanel("ip", " non loopback listener ")
+			}
+		}
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return NewBadPanel("ip", "error")
+		}
 	}
 
 	return NewGoodPanel("ip", "")
