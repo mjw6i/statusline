@@ -40,7 +40,12 @@ func processLine(line []byte) (loopback, ok bool) {
 	line = bytes.TrimSpace(line)
 	line = bytes.TrimLeft(line, "0123456789")
 	line = bytes.TrimSpace(line)
-	token = bytes.IndexByte(line, ':')
+	token = bytes.IndexByte(line, ' ')
+	if token == -1 {
+		return false, false
+	}
+	line = line[:token]
+	token = bytes.LastIndexByte(line, ':')
 	if token == -1 {
 		return false, false
 	}
