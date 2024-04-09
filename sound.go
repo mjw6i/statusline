@@ -25,6 +25,10 @@ func init() {
 
 type Sound struct {
 	buffer bytes.Buffer
+	Sink   struct {
+		vol int
+		ok  bool
+	}
 }
 
 func subscribe(updateMic, updateVolume chan<- struct{}) {
@@ -126,6 +130,16 @@ func (s *Sound) GetSources() panel {
 	return NewBadPanel("mics", " not muted ")
 }
 
+func (s *Sound) GetSinksDiff() (diff bool) {
+	vol, err := s.GetSinks()
+	if vol == s.Sink.vol && s.Sink.ok == (err == nil) {
+		return false
+	}
+	s.Sink.vol = vol
+	s.Sink.ok = (err == nil)
+	return true
+}
+
 func (s *Sound) GetSinks() (int, error) {
 	defer s.buffer.Reset()
 	var flp, frp int
@@ -174,8 +188,8 @@ func (s *Sound) GetSinks() (int, error) {
 	return flp, nil
 }
 
-func volume(vol int, err error, hide bool) panel {
-	if err != nil {
+func volume(vol int, ok bool, hide bool) panel {
+	if !ok {
 		return NewBadPanel("volume", "error")
 	}
 

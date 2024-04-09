@@ -46,9 +46,6 @@ func main() {
 		log.Fatal(err)
 	}
 	gDate, _ := json.Marshal(NewGoodPanel("date", ""))
-	var vol, newVol int
-	var volErr, newVolErr error
-	gVolume, _ := json.Marshal(volume(vol, volErr, true))
 
 	tXwayland := time.NewTicker(time.Minute)
 	defer tXwayland.Stop()
@@ -67,23 +64,23 @@ func main() {
 	sound := Sound{}
 	ip := IP{}
 	date := NewDate()
+	gVolume, _ := json.Marshal(volume(sound.Sink.vol, sound.Sink.ok, true))
+	var diff bool
 
 	for {
 		select {
 		case <-updateMic:
 			gMuted, _ = json.Marshal(sound.GetSources())
 		case <-updateVolume:
-			newVol, newVolErr = sound.GetSinks()
-			if newVol != vol || newVolErr != volErr {
-				vol = newVol
-				volErr = newVolErr
+			diff = sound.GetSinksDiff()
+			if diff {
 				tHideVolume.Reset(hideVolumeDuration)
-				gVolume, _ = json.Marshal(volume(vol, volErr, false))
+				gVolume, _ = json.Marshal(volume(sound.Sink.vol, sound.Sink.ok, false))
 			}
 		case <-tHideVolume.C:
 			// should that be a timer not a ticker?
 			tHideVolume.Stop()
-			gVolume, _ = json.Marshal(volume(vol, volErr, true))
+			gVolume, _ = json.Marshal(volume(sound.Sink.vol, sound.Sink.ok, true))
 
 		case <-tXwayland.C:
 			gXwayland, _ = json.Marshal(GetXWayland())
