@@ -23,29 +23,10 @@ func main() {
 
 	updateMic := make(chan struct{}, 1)
 	updateVolume := make(chan struct{}, 1)
-	updateMic <- struct{}{}
-	updateVolume <- struct{}{}
 	go subscribe(updateMic, updateVolume)
 
-	ver, err := json.Marshal(version{1})
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("%s\n[\n[]\n", ver)
-
-	gMuted, err := json.Marshal(NewGoodPanel("muted", ""))
-	if err != nil {
-		log.Fatal(err)
-	}
-	gXwayland, err := json.Marshal(NewGoodPanel("xwayland", ""))
-	if err != nil {
-		log.Fatal(err)
-	}
-	gIP, err := json.Marshal(NewGoodPanel("ip", ""))
-	if err != nil {
-		log.Fatal(err)
-	}
-	gDate, _ := json.Marshal(NewGoodPanel("date", ""))
+	bar := NewBar()
+	bar.RenderInitial()
 
 	tXwayland := time.NewTicker(time.Minute)
 	defer tXwayland.Stop()
@@ -61,35 +42,127 @@ func main() {
 	tHideVolume.Stop()
 	defer tHideVolume.Stop()
 
-	sound := Sound{}
-	ip := IP{}
-	date := NewDate()
-	gVolume, _ := json.Marshal(volume(sound.Sink.vol, sound.Sink.ok, true))
 	var diff bool
 
 	for {
 		select {
 		case <-updateMic:
-			gMuted, _ = json.Marshal(sound.GetSources())
+			bar.UpdateMuted()
 		case <-updateVolume:
-			diff = sound.GetSinksDiff()
+			diff = bar.UpdateVolume()
 			if diff {
 				tHideVolume.Reset(hideVolumeDuration)
-				gVolume, _ = json.Marshal(volume(sound.Sink.vol, sound.Sink.ok, false))
 			}
 		case <-tHideVolume.C:
 			// should that be a timer not a ticker?
 			tHideVolume.Stop()
-			gVolume, _ = json.Marshal(volume(sound.Sink.vol, sound.Sink.ok, true))
-
+			bar.HideVolumeIfNoError()
 		case <-tXwayland.C:
-			gXwayland, _ = json.Marshal(GetXWayland())
+			bar.UpdateXWayland()
 		case <-tIP.C:
-			gIP, _ = json.Marshal(ip.GetListeningIP())
+			bar.UpdateIP()
 		case <-tTime.C:
-			gDate, _ = json.Marshal(date.GetDate())
+			bar.UpdateDate()
 		}
 
-		fmt.Printf(",[%s,%s,%s,%s,%s]\n", gIP, gXwayland, gMuted, gVolume, gDate)
+		bar.Render()
 	}
+}
+
+type Bar struct {
+	muted    []byte
+	volume   []byte
+	IP       []byte // naming is beyond bad
+	XWayland []byte
+	Date     []byte // terrible
+
+	sound Sound
+	ip    IP
+	date  *Date
+}
+
+func NewBar() *Bar {
+	return &Bar{
+		sound: Sound{},
+		ip:    IP{},
+		date:  NewDate(),
+	}
+}
+
+func (b *Bar) RenderInitial() {
+	b.RenderHeader()
+	b.UpdateAll()
+	b.Render()
+}
+
+func (b *Bar) RenderHeader() {
+	ver, err := json.Marshal(version{1})
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s\n[\n[]\n", ver)
+}
+
+func (b *Bar) UpdateAll() {
+	b.UpdateMuted()
+	b.UpdateVolume()
+	b.UpdateIP()
+	b.UpdateXWayland()
+	b.UpdateDate()
+}
+
+func (b *Bar) UpdateMuted() {
+	var err error
+	b.muted, err = json.Marshal(b.sound.GetSources())
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (b *Bar) UpdateVolume() bool {
+	diff := b.sound.GetSinksDiff()
+	var err error
+	if diff {
+		b.volume, err = json.Marshal(volume(b.sound.Sink.vol, b.sound.Sink.ok, false))
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+	return diff
+}
+
+func (b *Bar) HideVolumeIfNoError() {
+	var err error
+	b.volume, err = json.Marshal(volume(b.sound.Sink.vol, b.sound.Sink.ok, true))
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (b *Bar) UpdateIP() {
+	var err error
+	b.IP, err = json.Marshal(b.ip.GetListeningIP())
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (b *Bar) UpdateXWayland() {
+	var err error
+	b.XWayland, err = json.Marshal(GetXWayland())
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (b *Bar) UpdateDate() {
+	var err error
+	b.Date, err = json.Marshal(b.date.GetDate())
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (b *Bar) Render() {
+	fmt.Printf(",[%s,%s,%s,%s,%s]\n", b.IP, b.XWayland, b.muted, b.volume, b.Date)
 }
