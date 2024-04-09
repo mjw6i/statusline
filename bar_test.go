@@ -34,3 +34,12 @@ func BenchmarkBarRenderAll(b *testing.B) {
 		bar.Render()
 	}
 }
+
+func BenchmarkUpdateAll(b *testing.B) {
+	bar := NewBar(NullFile)
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		bar.UpdateAll()
+	}
+}
