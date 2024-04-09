@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 )
 
@@ -13,13 +15,16 @@ type Bar struct {
 	XWayland []byte
 	Date     []byte // terrible
 
+	buf *bufio.Writer
+
 	sound Sound
 	ip    IP
 	date  *Date
 }
 
-func NewBar() *Bar {
+func NewBar(output io.Writer) *Bar {
 	return &Bar{
+		buf:   bufio.NewWriter(output),
 		sound: Sound{},
 		ip:    IP{},
 		date:  NewDate(),
@@ -37,7 +42,8 @@ func (b *Bar) RenderHeader() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%s\n[\n[]\n", ver)
+	fmt.Fprintf(b.buf, "%s\n[\n[]\n", ver)
+	b.buf.Flush()
 }
 
 func (b *Bar) UpdateAll() {
@@ -101,5 +107,6 @@ func (b *Bar) UpdateDate() {
 }
 
 func (b *Bar) Render() {
-	fmt.Printf(",[%s,%s,%s,%s,%s]\n", b.IP, b.XWayland, b.muted, b.volume, b.Date)
+	fmt.Fprintf(b.buf, ",[%s,%s,%s,%s,%s]\n", b.IP, b.XWayland, b.muted, b.volume, b.Date)
+	b.buf.Flush()
 }

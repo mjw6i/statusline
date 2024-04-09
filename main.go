@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"os"
 	"runtime"
 	"time"
 )
@@ -26,7 +27,7 @@ func main() {
 	updateVolume := make(chan struct{}, 1)
 	go subscribe(updateMic, updateVolume)
 
-	bar := NewBar()
+	bar := NewBar(os.Stdout)
 	bar.RenderInitial()
 
 	tXwayland := time.NewTicker(time.Minute)
