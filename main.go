@@ -6,7 +6,11 @@ import (
 	"time"
 )
 
-var base, accent string
+// temp, will be removed
+var (
+	base   string = "#000000"
+	accent string = "#000000"
+)
 
 func init() {
 	// debug.SetGCPercent(20)
