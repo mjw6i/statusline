@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 )
@@ -108,6 +107,19 @@ func (b *Bar) UpdateDate() {
 }
 
 func (b *Bar) Render() {
-	fmt.Fprintf(b.buf, ",[%s,%s,%s,%s,%s]\n", b.IP, b.XWayland, b.muted, b.volume, b.Date)
+	// this could be done cleaner
+	b.buf.WriteByte(',')
+	b.buf.WriteByte('[')
+	b.buf.Write(b.IP)
+	b.buf.WriteByte(',')
+	b.buf.Write(b.XWayland)
+	b.buf.WriteByte(',')
+	b.buf.Write(b.muted)
+	b.buf.WriteByte(',')
+	b.buf.Write(b.volume)
+	b.buf.WriteByte(',')
+	b.buf.Write(b.Date)
+	b.buf.WriteByte(']')
+	b.buf.WriteByte('\n')
 	b.buf.Flush()
 }

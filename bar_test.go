@@ -18,6 +18,7 @@ func init() {
 
 func BenchmarkBarRenderHeader(b *testing.B) {
 	bar := NewBar(NullFile)
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		bar.RenderHeader()
