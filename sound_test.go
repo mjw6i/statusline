@@ -8,14 +8,14 @@ import (
 
 func BenchmarkGetSinks(b *testing.B) {
 	var vol int
-	var err error
+	var ok bool
 
 	s := Sound{}
 
 	for i := 0; i < b.N; i++ {
-		vol, err = s.GetSinks()
-		if err != nil || vol != 40 {
-			b.Fatalf("%v, %v\n", vol, err)
+		vol, ok = s.GetSinks()
+		if !ok || vol != 40 {
+			b.Fatalf("%v, %v\n", vol, ok)
 		}
 	}
 }

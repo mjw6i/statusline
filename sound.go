@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -133,23 +132,26 @@ func (s *Sound) GetSources() panel {
 }
 
 func (s *Sound) GetSinksDiff() (diff bool) {
-	vol, err := s.GetSinks()
-	if vol == s.Sink.vol && s.Sink.ok == (err == nil) {
+	vol, ok := s.GetSinks()
+	if vol == s.Sink.vol && s.Sink.ok == ok {
 		return false
 	}
 	s.Sink.vol = vol
-	s.Sink.ok = (err == nil)
+	s.Sink.ok = ok
 	return true
 }
 
-func (s *Sound) GetSinks() (int, error) {
-	defer s.buffer.Reset()
+func (s *Sound) GetSinks() (int, bool) {
+	ok := LightCall(&s.buffer, pactl, []string{
+		pactl,
+		"--format=json",
+		"list",
+		"sinks",
+	})
+
 	var flp, frp int
-	cmd := exec.Command(pactl, "--format=json", "list", "sinks")
-	cmd.Stdout = &s.buffer
-	err := cmd.Run()
-	if err != nil {
-		return 0, err
+	if !ok {
+		return 0, false
 	}
 
 	type sink struct {
@@ -165,29 +167,29 @@ func (s *Sound) GetSinks() (int, error) {
 	}
 
 	var sinks []sink
-	err = json.Unmarshal(s.buffer.Bytes(), &sinks)
+	err := json.Unmarshal(s.buffer.Bytes(), &sinks)
 	if err != nil {
-		return 0, err
+		return 0, false
 	}
 
 	if len(sinks) != 1 {
-		return 0, errors.New("expected one sink")
+		return 0, false
 	}
 
 	flp, err = strconv.Atoi(strings.TrimSuffix(sinks[0].Volume.FrontLeft.P, "%"))
 	if err != nil {
-		return 0, err
+		return 0, false
 	}
 	frp, err = strconv.Atoi(strings.TrimSuffix(sinks[0].Volume.FrontRight.P, "%"))
 	if err != nil {
-		return 0, err
+		return 0, false
 	}
 
 	if flp != frp {
-		return 0, errors.New("uneven channels")
+		return 0, false
 	}
 
-	return flp, nil
+	return flp, true
 }
 
 func volume(vol int, ok bool, hide bool) panel {
