@@ -42,7 +42,7 @@ func (b *Bar) RenderHeader() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	b.buf.WriteString("\n[\n[]\n")
+	b.buf.WriteString("[\n[]\n")
 	b.buf.Flush()
 }
 
