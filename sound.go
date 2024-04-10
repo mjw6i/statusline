@@ -83,11 +83,13 @@ func eventLoop(r io.Reader, updateSources, updateSinks chan<- struct{}) {
 }
 
 func (s *Sound) GetSources() panel {
-	defer s.buffer.Reset()
-	cmd := exec.Command(pactl, "--format=json", "list", "sources")
-	cmd.Stdout = &s.buffer
-	err := cmd.Run()
-	if err != nil {
+	ok := LightCall(&s.buffer, pactl, []string{
+		pactl,
+		"--format=json",
+		"list",
+		"sources",
+	})
+	if !ok {
 		return NewBadPanel("mics", "error")
 	}
 
@@ -99,7 +101,7 @@ func (s *Sound) GetSources() panel {
 	}
 
 	var sources []source
-	err = json.Unmarshal(s.buffer.Bytes(), &sources)
+	err := json.Unmarshal(s.buffer.Bytes(), &sources)
 	if err != nil {
 		return NewBadPanel("mics", "error")
 	}

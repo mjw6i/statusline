@@ -1,20 +1,8 @@
 package main
 
 import (
-	"log"
-	"os"
 	"testing"
 )
-
-var NullFile *os.File
-
-func init() {
-	var err error
-	NullFile, err = os.OpenFile(os.DevNull, os.O_WRONLY, 0o644)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
 func BenchmarkBarRenderHeader(b *testing.B) {
 	bar := NewBar(NullFile)
