@@ -62,22 +62,19 @@ func (b *Bar) UpdateMuted() {
 
 func (b *Bar) UpdateVolume() bool {
 	diff := b.sound.GetSinksDiff()
-	var err error
 	if diff {
-		b.cache.Volume, err = json.Marshal(volume(b.sound.Sink.vol, b.sound.Sink.ok, false))
-	}
-	if err != nil {
-		log.Fatal(err)
+		b.renderPanelPrefix(&b.cache.Volume, []byte("volume"))
+		ok := b.sound.RenderVolume(&b.cache.Volume, false)
+		b.renderPanelSuffix(&b.cache.Volume, ok)
 	}
 	return diff
 }
 
+// TODO: hiding logic requires a rewrite
 func (b *Bar) HideVolumeIfNoError() {
-	var err error
-	b.cache.Volume, err = json.Marshal(volume(b.sound.Sink.vol, b.sound.Sink.ok, true))
-	if err != nil {
-		log.Fatal(err)
-	}
+	b.renderPanelPrefix(&b.cache.Volume, []byte("volume"))
+	ok := b.sound.RenderVolume(&b.cache.Volume, true)
+	b.renderPanelSuffix(&b.cache.Volume, ok)
 }
 
 func (b *Bar) UpdateIP() {

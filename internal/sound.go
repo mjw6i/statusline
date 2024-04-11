@@ -199,14 +199,21 @@ func (s *Sound) GetSinks() (int, bool) {
 	return flp, true
 }
 
-func volume(vol int, ok bool, hide bool) panel {
+func (s *Sound) RenderVolume(b *[]byte, hide bool) (ok bool) {
+	text, ok := volume(s.Sink.vol, s.Sink.ok, hide)
+	*b = append(*b, text...)
+	return ok
+}
+
+// TODO: this chain requires a rewrite
+func volume(vol int, ok bool, hide bool) (text []byte, res bool) {
 	if !ok {
-		return NewBadPanel("volume", "error")
+		return []byte("error"), false
 	}
 
 	if hide {
-		return NewGoodPanel("volume", "")
+		return []byte(""), true
 	}
 
-	return NewGoodPanel("volume", fmt.Sprintf(" VOL: %d%% ", vol))
+	return []byte(fmt.Sprintf(" VOL: %d%% ", vol)), true
 }
