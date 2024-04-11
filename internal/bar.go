@@ -55,11 +55,9 @@ func (b *Bar) UpdateAll() {
 }
 
 func (b *Bar) UpdateMuted() {
-	var err error
-	b.cache.Muted, err = json.Marshal(b.sound.GetSources())
-	if err != nil {
-		log.Fatal(err)
-	}
+	b.renderPanelPrefix(&b.cache.Muted, []byte("muted"))
+	ok := b.sound.RenderMuted(&b.cache.Muted)
+	b.renderPanelSuffix(&b.cache.Muted, ok)
 }
 
 func (b *Bar) UpdateVolume() bool {

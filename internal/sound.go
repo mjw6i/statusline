@@ -81,15 +81,16 @@ func eventLoop(r io.Reader, updateSources, updateSinks chan<- struct{}) {
 	}
 }
 
-func (s *Sound) GetSources() panel {
-	ok := LightCall(&s.buffer, pactl, []string{
+// TODO: return []byte still allocates, ignore for now
+func (s *Sound) GetSources() (text []byte, ok bool) {
+	res := LightCall(&s.buffer, pactl, []string{
 		pactl,
 		"--format=json",
 		"list",
 		"sources",
 	})
-	if !ok {
-		return NewBadPanel("mics", "error")
+	if !res {
+		return []byte("error"), false
 	}
 
 	type source struct {
@@ -102,7 +103,7 @@ func (s *Sound) GetSources() panel {
 	var sources []source
 	err := json.Unmarshal(s.buffer.Bytes(), &sources)
 	if err != nil {
-		return NewBadPanel("mics", "error")
+		return []byte("error"), false
 	}
 
 	var count int
@@ -117,18 +118,24 @@ func (s *Sound) GetSources() panel {
 	}
 
 	if count == 0 {
-		return NewGoodPanel("mics", "")
+		return []byte(""), true
 	}
 
 	if count > 1 {
-		return NewBadPanel("mics", " multiple mics ")
+		return []byte(" multiple mics "), false
 	}
 
 	if muted {
-		return NewGoodPanel("mics", "")
+		return []byte(""), true
 	}
 
-	return NewBadPanel("mics", " not muted ")
+	return []byte(" not muted "), false
+}
+
+func (s *Sound) RenderMuted(b *[]byte) (ok bool) {
+	text, ok := s.GetSources()
+	*b = append(*b, text...)
+	return ok
 }
 
 func (s *Sound) GetSinksDiff() (diff bool) {

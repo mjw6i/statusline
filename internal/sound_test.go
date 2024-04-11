@@ -21,15 +21,16 @@ func BenchmarkGetSinks(b *testing.B) {
 }
 
 func BenchmarkGetSources(b *testing.B) {
-	var p panel
+	var text []byte
+	var ok bool
 
 	s := Sound{}
 
 	for i := 0; i < b.N; i++ {
-		p = s.GetSources()
+		text, ok = s.GetSources()
 
-		if !slices.Equal(p.Text, []byte(`""`)) {
-			b.Fatalf("%+v\n", p)
+		if !ok {
+			b.Fatalf("%s, %v\n", text, ok)
 		}
 	}
 }
