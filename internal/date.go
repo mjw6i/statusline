@@ -14,11 +14,15 @@ func NewDate() *Date {
 	}
 }
 
-func (d *Date) GetDate() panel {
+func (d *Date) getDate() {
 	d.buf = d.buf[:0]
 	d.buf = append(d.buf, '"')
 	d.buf = time.Now().AppendFormat(d.buf, "[Mon] 2006-01-02 15:04:05")
 	d.buf = append(d.buf, '"')
+}
 
-	return NewGoodPanelFast("date", d.buf)
+func (d *Date) Render(b *[]byte) (ok bool) {
+	d.getDate()
+	*b = append(*b, d.buf...)
+	return true
 }

@@ -8,17 +8,17 @@ import (
 )
 
 type Bar struct {
-	muted    []byte
-	volume   []byte
-	IP       []byte // naming is beyond bad
-	XWayland []byte
-	Date     []byte // terrible
-
-	buf *bufio.Writer
-
-	sound Sound
-	ip    IP
+	buf   *bufio.Writer
 	date  *Date
+	cache struct {
+		Muted    []byte
+		Volume   []byte
+		IP       []byte
+		XWayland []byte
+		Date     []byte
+	}
+	ip    IP
+	sound Sound
 }
 
 func NewBar(output io.Writer) *Bar {
@@ -56,7 +56,7 @@ func (b *Bar) UpdateAll() {
 
 func (b *Bar) UpdateMuted() {
 	var err error
-	b.muted, err = json.Marshal(b.sound.GetSources())
+	b.cache.Muted, err = json.Marshal(b.sound.GetSources())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func (b *Bar) UpdateVolume() bool {
 	diff := b.sound.GetSinksDiff()
 	var err error
 	if diff {
-		b.volume, err = json.Marshal(volume(b.sound.Sink.vol, b.sound.Sink.ok, false))
+		b.cache.Volume, err = json.Marshal(volume(b.sound.Sink.vol, b.sound.Sink.ok, false))
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -76,7 +76,7 @@ func (b *Bar) UpdateVolume() bool {
 
 func (b *Bar) HideVolumeIfNoError() {
 	var err error
-	b.volume, err = json.Marshal(volume(b.sound.Sink.vol, b.sound.Sink.ok, true))
+	b.cache.Volume, err = json.Marshal(volume(b.sound.Sink.vol, b.sound.Sink.ok, true))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func (b *Bar) HideVolumeIfNoError() {
 
 func (b *Bar) UpdateIP() {
 	var err error
-	b.IP, err = json.Marshal(b.ip.GetListeningIP())
+	b.cache.IP, err = json.Marshal(b.ip.GetListeningIP())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -92,33 +92,51 @@ func (b *Bar) UpdateIP() {
 
 func (b *Bar) UpdateXWayland() {
 	var err error
-	b.XWayland, err = json.Marshal(GetXWayland())
+	b.cache.XWayland, err = json.Marshal(GetXWayland())
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func (b *Bar) UpdateDate() {
-	var err error
-	b.Date, err = json.Marshal(b.date.GetDate())
-	if err != nil {
-		log.Fatal(err)
+	b.renderPanelPrefix(&b.cache.Date, []byte("date"))
+	ok := b.date.Render(&b.cache.Date)
+	b.renderPanelSuffix(&b.cache.Date, ok)
+}
+
+// TODO: less appends, perhaps use different function
+func (b *Bar) renderPanelPrefix(buf *[]byte, name []byte) {
+	*buf = (*buf)[:0]
+	*buf = append(*buf, '{')
+	*buf = append(*buf, []byte(`"separator":false,`)...)
+	*buf = append(*buf, []byte(`"separator_block_width":0,`)...)
+	*buf = append(*buf, []byte(`"name":"`)...)
+	*buf = append(*buf, name...)
+	*buf = append(*buf, []byte(`","full_text":`)...)
+}
+
+// TODO: pass color values
+func (b *Bar) renderPanelSuffix(buf *[]byte, ok bool) {
+	if !ok {
+		*buf = append(*buf, []byte(`,"background":"#000000"`)...)
+		*buf = append(*buf, []byte(`,"color":"#000000"`)...)
 	}
+	*buf = append(*buf, '}')
 }
 
 func (b *Bar) Render() {
 	// this could be done cleaner
 	b.buf.WriteByte(',')
 	b.buf.WriteByte('[')
-	b.buf.Write(b.IP)
+	b.buf.Write(b.cache.IP)
 	b.buf.WriteByte(',')
-	b.buf.Write(b.XWayland)
+	b.buf.Write(b.cache.XWayland)
 	b.buf.WriteByte(',')
-	b.buf.Write(b.muted)
+	b.buf.Write(b.cache.Muted)
 	b.buf.WriteByte(',')
-	b.buf.Write(b.volume)
+	b.buf.Write(b.cache.Volume)
 	b.buf.WriteByte(',')
-	b.buf.Write(b.Date)
+	b.buf.Write(b.cache.Date)
 	b.buf.WriteByte(']')
 	b.buf.WriteByte('\n')
 	b.buf.Flush()

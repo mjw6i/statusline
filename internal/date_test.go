@@ -1,18 +1,17 @@
 package internal
 
 import (
-	"slices"
 	"testing"
 )
 
 func BenchmarkGetDate(b *testing.B) {
 	d := NewDate()
-	var p panel
 
 	for i := 0; i < b.N; i++ {
-		p = d.GetDate()
-		if slices.Equal(p.Text, []byte(`""`)) {
-			b.Fatalf("%+v\n", p)
+		d.getDate()
+		if len(d.buf) != 27 {
+			b.Fatalf("%s %v\n", d.buf, len(d.buf))
 		}
+		d.buf = d.buf[:0]
 	}
 }
