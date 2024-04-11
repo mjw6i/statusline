@@ -5,6 +5,8 @@ import (
 	"os"
 	"runtime"
 	"time"
+
+	"github.com/mjw6i/statusline/internal"
 )
 
 // temp, will be removed
@@ -25,9 +27,9 @@ func main() {
 
 	updateMic := make(chan struct{}, 1)
 	updateVolume := make(chan struct{}, 1)
-	go subscribe(updateMic, updateVolume)
+	go internal.Subscribe(updateMic, updateVolume)
 
-	bar := NewBar(os.Stdout)
+	bar := internal.NewBar(os.Stdout)
 	bar.RenderInitial()
 
 	tXwayland := time.NewTicker(time.Minute)

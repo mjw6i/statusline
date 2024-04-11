@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"bytes"
@@ -30,7 +30,7 @@ type Sound struct {
 	}
 }
 
-func subscribe(updateMic, updateVolume chan<- struct{}) {
+func Subscribe(updateMic, updateVolume chan<- struct{}) {
 	// use interruptable command to clean exit
 	cmd := exec.Command(pactl, "--format=json", "subscribe")
 	out, err := cmd.StdoutPipe()

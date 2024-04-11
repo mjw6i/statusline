@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"encoding/json"
@@ -40,5 +40,6 @@ func NewBadPanel(name string, text string) panel {
 }
 
 func NewBadPanelFast(name string, text []byte) panel {
-	return panel{Name: name, Text: text, Color: base, Background: accent}
+	// return panel{Name: name, Text: text, Color: base, Background: accent}
+	return panel{Name: name, Text: text, Color: "#000000", Background: "#000000"}
 }
