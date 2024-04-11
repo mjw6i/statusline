@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"errors"
 	"os/exec"
 )
 
@@ -16,19 +15,14 @@ func init() {
 }
 
 func GetXWayland() (text []byte, ok bool) {
-	err := exec.Command(pidof, "Xwayland").Run()
-	if err != nil {
-		var eerr *exec.ExitError
-		if errors.As(err, &eerr) {
-			ec := eerr.ExitCode()
-			if ec == 1 {
-				return []byte(""), true
-			}
-		}
-		return []byte("error"), false
+	ec := LightCallExitCode(pidof, []string{pidof, "Xwayland"})
+	if ec == 1 {
+		return []byte(""), true
 	}
-
-	return []byte(" xwayland "), false
+	if ec == 0 {
+		return []byte(" xwayland "), false
+	}
+	return []byte("error"), false
 }
 
 func RenderXWayland(b *[]byte) (ok bool) {

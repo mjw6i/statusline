@@ -44,7 +44,7 @@ func LightCall(buffer *bytes.Buffer, target string, args []string) bool {
 	}()
 
 	files := []*os.File{NullFile, w, NullFile}
-	process, err := os.StartProcess(pactl, args, &os.ProcAttr{
+	process, err := os.StartProcess(target, args, &os.ProcAttr{
 		Files: files,
 		Env:   CallEnv,
 		Sys:   nil,
@@ -72,4 +72,22 @@ func LightCall(buffer *bytes.Buffer, target string, args []string) bool {
 	// being bigger than output
 
 	return state.Success()
+}
+
+func LightCallExitCode(target string, args []string) int {
+	files := []*os.File{NullFile, NullFile, NullFile}
+	process, err := os.StartProcess(target, args, &os.ProcAttr{
+		Files: files,
+		Env:   CallEnv,
+		Sys:   nil,
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+	state, err := process.Wait()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return state.ExitCode()
 }
