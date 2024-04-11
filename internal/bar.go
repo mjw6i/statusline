@@ -108,10 +108,12 @@ func (b *Bar) renderPanelPrefix(buf *[]byte, name []byte) {
 	*buf = append(*buf, []byte(`"name":"`)...)
 	*buf = append(*buf, name...)
 	*buf = append(*buf, []byte(`","full_text":`)...)
+	*buf = append(*buf, '"')
 }
 
 // TODO: pass color values
 func (b *Bar) renderPanelSuffix(buf *[]byte, ok bool) {
+	*buf = append(*buf, '"')
 	if !ok {
 		*buf = append(*buf, []byte(`,"background":"#000000"`)...)
 		*buf = append(*buf, []byte(`,"color":"#000000"`)...)
