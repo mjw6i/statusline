@@ -2,9 +2,7 @@ package internal
 
 import (
 	"bufio"
-	"encoding/json"
 	"io"
-	"log"
 )
 
 type Bar struct {
@@ -74,17 +72,15 @@ func (b *Bar) HideVolumeIfNoError() {
 }
 
 func (b *Bar) UpdateIP() {
-	b.renderPanelPrefix(&b.cache.IP, []byte("IP"))
+	b.renderPanelPrefix(&b.cache.IP, []byte("ip"))
 	ok := b.ip.Render(&b.cache.IP)
 	b.renderPanelSuffix(&b.cache.IP, ok)
 }
 
 func (b *Bar) UpdateXWayland() {
-	var err error
-	b.cache.XWayland, err = json.Marshal(GetXWayland())
-	if err != nil {
-		log.Fatal(err)
-	}
+	b.renderPanelPrefix(&b.cache.XWayland, []byte("xwayland"))
+	ok := RenderXWayland(&b.cache.XWayland)
+	b.renderPanelSuffix(&b.cache.XWayland, ok)
 }
 
 func (b *Bar) UpdateDate() {

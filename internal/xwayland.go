@@ -15,18 +15,24 @@ func init() {
 	}
 }
 
-func GetXWayland() panel {
+func GetXWayland() (text []byte, ok bool) {
 	err := exec.Command(pidof, "Xwayland").Run()
 	if err != nil {
 		var eerr *exec.ExitError
 		if errors.As(err, &eerr) {
 			ec := eerr.ExitCode()
 			if ec == 1 {
-				return NewGoodPanel("xwayland", "")
+				return []byte(""), true
 			}
 		}
-		return NewBadPanel("xwayland", "error")
+		return []byte("error"), false
 	}
 
-	return NewBadPanel("xwayland", " xwayland ")
+	return []byte(" xwayland "), false
+}
+
+func RenderXWayland(b *[]byte) (ok bool) {
+	text, ok := GetXWayland()
+	*b = append(*b, text...)
+	return ok
 }
