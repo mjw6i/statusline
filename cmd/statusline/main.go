@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"runtime"
@@ -22,7 +23,11 @@ func main() {
 
 	updateMic := make(chan struct{}, 1)
 	updateVolume := make(chan struct{}, 1)
-	go internal.Subscribe(updateMic, updateVolume)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go internal.Subscribe(ctx, updateMic, updateVolume)
 
 	bar := internal.NewBar(os.Stdout, base, accent)
 	bar.RenderInitial()

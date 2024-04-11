@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -32,9 +33,8 @@ type Sound struct {
 	}
 }
 
-func Subscribe(updateMic, updateVolume chan<- struct{}) {
-	// use interruptable command to clean exit
-	cmd := exec.Command(pactl, "--format=json", "subscribe")
+func Subscribe(ctx context.Context, updateMic, updateVolume chan<- struct{}) {
+	cmd := exec.CommandContext(ctx, pactl, "--format=json", "subscribe")
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
