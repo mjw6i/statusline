@@ -6,19 +6,19 @@ import (
 )
 
 type Bar struct {
-	buf   *bufio.Writer
-	date  *Date
-	cache struct {
+	buf    *bufio.Writer
+	date   *Date
+	base   string
+	accent string
+	cache  struct {
 		Muted    []byte
 		Volume   []byte
 		IP       []byte
 		XWayland []byte
 		Date     []byte
 	}
-	ip     IP
-	sound  Sound
-	base   string
-	accent string
+	ip    IP
+	sound Sound
 }
 
 func NewBar(output io.Writer, base, accent string) *Bar {
