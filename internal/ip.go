@@ -60,12 +60,17 @@ func processLine(line []byte) (loopback, ok bool) {
 
 func (i *IP) GetListeningIP() (text []byte, ok bool) {
 	defer i.buffer.Reset()
-	cmd := exec.Command(netstat, "--numeric", "--wide", "-tl")
-	cmd.Stdout = &i.buffer
-	err := cmd.Run()
-	if err != nil {
+	res := LightCall(&i.buffer, netstat, []string{
+		netstat,
+		"--numeric",
+		"--wide",
+		"-tl",
+	})
+	if !res {
 		return []byte("error"), false
 	}
+
+	var err error
 
 	// skip two lines
 	for range 2 {
@@ -76,7 +81,7 @@ func (i *IP) GetListeningIP() (text []byte, ok bool) {
 	}
 
 	var line []byte
-	var loopback, res bool
+	var loopback bool
 
 	for {
 		line, err = i.buffer.ReadBytes('\n')
