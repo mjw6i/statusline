@@ -4,10 +4,6 @@ import (
 	"encoding/json"
 )
 
-type version struct {
-	Version int `json:"version"`
-}
-
 type panel struct {
 	Name                string          `json:"name"`
 	Background          string          `json:"background,omitempty"`

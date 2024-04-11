@@ -37,12 +37,8 @@ func (b *Bar) RenderInitial() {
 }
 
 func (b *Bar) RenderHeader() {
-	enc := json.NewEncoder(b.buf)
-	err := enc.Encode(version{1})
-	if err != nil {
-		log.Fatal(err)
-	}
-	b.buf.WriteString("[\n[]\n")
+	b.buf.WriteString(`{"version":1}`)
+	b.buf.WriteString("\n[\n[]\n")
 	b.buf.Flush()
 }
 
