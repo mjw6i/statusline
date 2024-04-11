@@ -58,44 +58,50 @@ func processLine(line []byte) (loopback, ok bool) {
 	return ip.IsLoopback(), true
 }
 
-func (i *IP) GetListeningIP() panel {
+func (i *IP) GetListeningIP() (text []byte, ok bool) {
 	defer i.buffer.Reset()
 	cmd := exec.Command(netstat, "--numeric", "--wide", "-tl")
 	cmd.Stdout = &i.buffer
 	err := cmd.Run()
 	if err != nil {
-		return NewBadPanel("ip", "error")
+		return []byte("error"), false
 	}
 
 	// skip two lines
 	for range 2 {
 		_, err = i.buffer.ReadBytes('\n')
 		if err != nil {
-			return NewBadPanel("ip", "error")
+			return []byte("error"), false
 		}
 	}
 
 	var line []byte
-	var loopback, ok bool
+	var loopback, res bool
 
 	for {
 		line, err = i.buffer.ReadBytes('\n')
 		if len(line) > 0 {
 			line = line[:len(line)-1]
-			loopback, ok = processLine(line)
-			if !ok {
-				return NewBadPanel("ip", "error")
+			loopback, res = processLine(line)
+			if !res {
+				return []byte("error"), false
 			}
 			if !loopback {
-				return NewBadPanel("ip", " non loopback listener ")
+				return []byte(" non loopback listener "), false
 			}
 		}
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			return NewBadPanel("ip", "error")
+			return []byte("error"), false
 		}
 	}
 
-	return NewGoodPanel("ip", "")
+	return []byte(""), true
+}
+
+func (i *IP) Render(b *[]byte) (ok bool) {
+	text, ok := i.GetListeningIP()
+	*b = append(*b, text...)
+	return ok
 }

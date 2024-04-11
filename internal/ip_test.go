@@ -1,17 +1,17 @@
 package internal
 
 import (
-	"slices"
 	"testing"
 )
 
 func BenchmarkGetIP(b *testing.B) {
 	ip := IP{}
-	var p panel
+	var text []byte
+	var ok bool
 	for i := 0; i < b.N; i++ {
-		p = ip.GetListeningIP()
-		if !slices.Equal(p.Text, []byte(`""`)) {
-			b.Fatalf("%v\n", p.Text)
+		text, ok = ip.GetListeningIP()
+		if !ok {
+			b.Fatalf("%s, %v\n", text, ok)
 		}
 	}
 }

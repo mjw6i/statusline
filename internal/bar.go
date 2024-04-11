@@ -74,11 +74,9 @@ func (b *Bar) HideVolumeIfNoError() {
 }
 
 func (b *Bar) UpdateIP() {
-	var err error
-	b.cache.IP, err = json.Marshal(b.ip.GetListeningIP())
-	if err != nil {
-		log.Fatal(err)
-	}
+	b.renderPanelPrefix(&b.cache.IP, []byte("IP"))
+	ok := b.ip.Render(&b.cache.IP)
+	b.renderPanelSuffix(&b.cache.IP, ok)
 }
 
 func (b *Bar) UpdateXWayland() {
