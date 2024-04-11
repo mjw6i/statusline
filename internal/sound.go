@@ -33,7 +33,7 @@ type Sound struct {
 	}
 }
 
-func Subscribe(ctx context.Context, updateMic, updateVolume chan<- struct{}) {
+func Subscribe(ctx context.Context, updateMic, updateVolume chan<- struct{}) error {
 	cmd := exec.CommandContext(ctx, pactl, "--format=json", "subscribe")
 	out, err := cmd.StdoutPipe()
 	if err != nil {
@@ -41,15 +41,12 @@ func Subscribe(ctx context.Context, updateMic, updateVolume chan<- struct{}) {
 	}
 	err = cmd.Start()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	eventLoop(out, updateMic, updateVolume)
 
-	err = cmd.Wait()
-	if err != nil {
-		log.Fatal(err)
-	}
+	return cmd.Wait()
 }
 
 func eventLoop(r io.Reader, updateSources, updateSinks chan<- struct{}) {
@@ -99,7 +96,6 @@ func (s *Sound) GetSources() (text []byte, ok bool) {
 
 	var muted bool
 	var count int
-
 	var class string
 
 	jsonparser.ArrayEach(s.buffer.Bytes(), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"log"
 	"os"
 	"runtime"
 	"time"
@@ -27,7 +28,12 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go internal.Subscribe(ctx, updateMic, updateVolume)
+	go func() {
+		err := internal.Subscribe(ctx, updateMic, updateVolume)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}()
 
 	bar := internal.NewBar(os.Stdout, base, accent)
 	bar.RenderInitial()

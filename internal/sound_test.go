@@ -1,9 +1,11 @@
 package internal
 
 import (
+	"context"
 	"io"
 	"slices"
 	"testing"
+	"time"
 )
 
 func BenchmarkGetSinks(b *testing.B) {
@@ -32,6 +34,29 @@ func BenchmarkGetSources(b *testing.B) {
 		if !ok {
 			b.Fatalf("%s, %v\n", text, ok)
 		}
+	}
+}
+
+func BenchmarkSubscribe(b *testing.B) {
+	updateMic := make(chan struct{})
+	updateVolume := make(chan struct{})
+
+	var err error
+
+	for i := 0; i < b.N; i++ {
+		ctx, cancel := context.WithCancel(context.Background())
+
+		go func() {
+			// try to interrupt the command during Wait rather than prevent it from starting
+			time.Sleep(3 * time.Millisecond)
+			cancel()
+		}()
+
+		err = Subscribe(ctx, updateMic, updateVolume)
+		if err != nil && err.Error() != "signal: killed" {
+			b.Fatal(err)
+		}
+
 	}
 }
 
