@@ -105,14 +105,17 @@ func (s *Sound) GetSources() (text []byte, ok bool) {
 	jsonparser.ArrayEach(s.buffer.Bytes(), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if err != nil {
 			ok = false
+			return
 		}
 		muted, err = jsonparser.GetBoolean(value, "mute")
 		if err != nil {
 			ok = false
+			return
 		}
 		class, err = jsonparser.GetUnsafeString(value, "properties", "device.class")
 		if err != nil {
 			ok = false
+			return
 		}
 		if class != "monitor" {
 			count++
@@ -162,47 +165,54 @@ func (s *Sound) GetSinks() (int, bool) {
 		"sinks",
 	})
 
-	var flp, frp int
 	if !ok {
 		return 0, false
 	}
 
-	type sink struct {
-		Volume struct {
-			FrontLeft struct {
-				P string `json:"value_percent"`
-			} `json:"front-left"`
-			FrontRight struct {
-				P string `json:"value_percent"`
-			} `json:"front-right"`
+	var flp, frp string
+	var count int
+
+	jsonparser.ArrayEach(s.buffer.Bytes(), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		if err != nil {
+			ok = false
+			return
 		}
-		Mute bool
+
+		flp, err = jsonparser.GetUnsafeString(value, "volume", "front-left", "value_percent")
+		if err != nil {
+			ok = false
+			return
+		}
+
+		frp, err = jsonparser.GetUnsafeString(value, "volume", "front-right", "value_percent")
+		if err != nil {
+			ok = false
+			return
+		}
+		count++
+	})
+
+	if !ok || count != 1 {
+		return 0, false
 	}
 
-	var sinks []sink
-	err := json.Unmarshal(s.buffer.Bytes(), &sinks)
+	var fl, fr int
+	var err error
+
+	fl, err = strconv.Atoi(strings.TrimSuffix(flp, "%"))
+	if err != nil {
+		return 0, false
+	}
+	fr, err = strconv.Atoi(strings.TrimSuffix(frp, "%"))
 	if err != nil {
 		return 0, false
 	}
 
-	if len(sinks) != 1 {
+	if fl != fr {
 		return 0, false
 	}
 
-	flp, err = strconv.Atoi(strings.TrimSuffix(sinks[0].Volume.FrontLeft.P, "%"))
-	if err != nil {
-		return 0, false
-	}
-	frp, err = strconv.Atoi(strings.TrimSuffix(sinks[0].Volume.FrontRight.P, "%"))
-	if err != nil {
-		return 0, false
-	}
-
-	if flp != frp {
-		return 0, false
-	}
-
-	return flp, true
+	return fl, true
 }
 
 func (s *Sound) RenderVolume(b *[]byte, hide bool) (ok bool) {
