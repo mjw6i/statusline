@@ -9,18 +9,13 @@ import (
 	"github.com/mjw6i/statusline/internal"
 )
 
-// temp, will be removed
-var (
-	base   string = "#000000"
-	accent string = "#000000"
-)
-
 func init() {
 	// debug.SetGCPercent(20)
 	runtime.GOMAXPROCS(1)
 }
 
 func main() {
+	var base, accent string
 	flag.StringVar(&base, "base", "#000000", "base color")
 	flag.StringVar(&accent, "accent", "#000000", "accent color")
 	flag.Parse()
@@ -29,7 +24,7 @@ func main() {
 	updateVolume := make(chan struct{}, 1)
 	go internal.Subscribe(updateMic, updateVolume)
 
-	bar := internal.NewBar(os.Stdout)
+	bar := internal.NewBar(os.Stdout, base, accent)
 	bar.RenderInitial()
 
 	tXwayland := time.NewTicker(time.Minute)

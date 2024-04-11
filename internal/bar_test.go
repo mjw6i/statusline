@@ -5,7 +5,7 @@ import (
 )
 
 func BenchmarkBarRenderHeader(b *testing.B) {
-	bar := NewBar(NullFile)
+	bar := NewBar(NullFile, "#000000", "#000000")
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -14,7 +14,7 @@ func BenchmarkBarRenderHeader(b *testing.B) {
 }
 
 func BenchmarkBarRenderAll(b *testing.B) {
-	bar := NewBar(NullFile)
+	bar := NewBar(NullFile, "#000000", "#000000")
 	bar.UpdateAll()
 	b.ResetTimer()
 
@@ -24,7 +24,7 @@ func BenchmarkBarRenderAll(b *testing.B) {
 }
 
 func BenchmarkUpdateAll(b *testing.B) {
-	bar := NewBar(NullFile)
+	bar := NewBar(NullFile, "#000000", "#000000")
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {

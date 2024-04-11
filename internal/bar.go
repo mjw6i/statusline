@@ -15,16 +15,20 @@ type Bar struct {
 		XWayland []byte
 		Date     []byte
 	}
-	ip    IP
-	sound Sound
+	ip     IP
+	sound  Sound
+	base   string
+	accent string
 }
 
-func NewBar(output io.Writer) *Bar {
+func NewBar(output io.Writer, base, accent string) *Bar {
 	return &Bar{
-		buf:   bufio.NewWriter(output),
-		sound: Sound{},
-		ip:    IP{},
-		date:  NewDate(),
+		buf:    bufio.NewWriter(output),
+		sound:  Sound{},
+		ip:     IP{},
+		date:   NewDate(),
+		base:   base,
+		accent: accent,
 	}
 }
 
@@ -105,8 +109,11 @@ func (b *Bar) renderPanelPrefix(buf *[]byte, name []byte) {
 func (b *Bar) renderPanelSuffix(buf *[]byte, ok bool) {
 	*buf = append(*buf, '"')
 	if !ok {
-		*buf = append(*buf, []byte(`,"background":"#000000"`)...)
-		*buf = append(*buf, []byte(`,"color":"#000000"`)...)
+		*buf = append(*buf, []byte(`,"background":"`)...)
+		*buf = append(*buf, []byte(b.accent)...)
+		*buf = append(*buf, []byte(`","color":"`)...)
+		*buf = append(*buf, []byte(b.base)...)
+		*buf = append(*buf, '"')
 	}
 	*buf = append(*buf, '}')
 }
