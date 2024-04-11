@@ -10,6 +10,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/buger/jsonparser"
 )
 
 var pactl string
@@ -93,28 +95,32 @@ func (s *Sound) GetSources() (text []byte, ok bool) {
 		return []byte("error"), false
 	}
 
-	type source struct {
-		Properties struct {
-			DeviceClass string `json:"device.class"`
-		}
-		Mute bool
-	}
+	ok = true
 
-	var sources []source
-	err := json.Unmarshal(s.buffer.Bytes(), &sources)
-	if err != nil {
-		return []byte("error"), false
-	}
-
-	var count int
 	var muted bool
+	var count int
 
-	for _, s := range sources {
-		if s.Properties.DeviceClass == "monitor" {
-			continue
+	var class string
+
+	jsonparser.ArrayEach(s.buffer.Bytes(), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		if err != nil {
+			ok = false
 		}
-		count++
-		muted = s.Mute
+		muted, err = jsonparser.GetBoolean(value, "mute")
+		if err != nil {
+			ok = false
+		}
+		class, err = jsonparser.GetUnsafeString(value, "properties", "device.class")
+		if err != nil {
+			ok = false
+		}
+		if class != "monitor" {
+			count++
+		}
+	})
+
+	if !ok {
+		return []byte("error"), false
 	}
 
 	if count == 0 {
