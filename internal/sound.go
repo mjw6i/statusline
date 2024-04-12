@@ -3,12 +3,9 @@ package internal
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"os/exec"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -33,49 +30,35 @@ type Sound struct {
 	}
 }
 
-func Subscribe(ctx context.Context, updateMic, updateVolume chan<- struct{}) error {
-	cmd := exec.CommandContext(ctx, pactl, "--format=json", "subscribe")
-	out, err := cmd.StdoutPipe()
+func Subscribe(ctx context.Context, buf []byte, updateSources, updateSinks chan<- struct{}) bool {
+	// could use io pipe instead of function
+	res := LightCallStreamLine(ctx, buf, pactl, []string{
+		pactl,
+		"--format=json",
+		"subscribe",
+	}, func(line []byte) {
+		eventLine(line, updateSources, updateSinks) // not the greatest design
+	})
+
+	return res
+}
+
+func eventLine(line []byte, updateSources, updateSinks chan<- struct{}) {
+	on, err := jsonparser.GetUnsafeString(line, "on")
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = cmd.Start()
-	if err != nil {
-		return err
-	}
 
-	eventLoop(out, updateMic, updateVolume)
-
-	return cmd.Wait()
-}
-
-func eventLoop(r io.Reader, updateSources, updateSinks chan<- struct{}) {
-	decoder := json.NewDecoder(r)
-
-	type event struct {
-		Event json.RawMessage
-		On    json.RawMessage
-	}
-
-	var err error
-	var e event
-
-	for decoder.More() {
-		err = decoder.Decode(&e)
-		if err != nil {
-			log.Fatal(err)
+	switch on {
+	case "source":
+		select {
+		case updateSources <- struct{}{}:
+		default:
 		}
-
-		if slices.Equal(e.On, []byte(`"source"`)) {
-			select {
-			case updateSources <- struct{}{}:
-			default:
-			}
-		} else if slices.Equal(e.On, []byte(`"sink"`)) {
-			select {
-			case updateSinks <- struct{}{}:
-			default:
-			}
+	case "sink":
+		select {
+		case updateSinks <- struct{}{}:
+		default:
 		}
 	}
 }

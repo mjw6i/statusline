@@ -29,10 +29,9 @@ func main() {
 	defer cancel()
 
 	go func() {
-		err := internal.Subscribe(ctx, updateMic, updateVolume)
-		if err != nil {
-			log.Fatalln(err)
-		}
+		buf := make([]byte, 4096)
+		ok := internal.Subscribe(ctx, buf, updateMic, updateVolume)
+		log.Fatalln(ok)
 	}()
 
 	bar := internal.NewBar(os.Stdout, base, accent)
