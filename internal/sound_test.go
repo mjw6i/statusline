@@ -38,7 +38,7 @@ func BenchmarkGetSources(b *testing.B) {
 func BenchmarkSubscribe(b *testing.B) {
 	updateMic := make(chan struct{})
 	updateVolume := make(chan struct{})
-	buf := make([]byte, 4096)
+	buf := make([]byte, 128)
 
 	for i := 0; i < b.N; i++ {
 		ctx, cancel := context.WithCancel(context.Background())

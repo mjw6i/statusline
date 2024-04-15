@@ -29,7 +29,7 @@ func main() {
 	defer cancel()
 
 	go func() {
-		buf := make([]byte, 4096)
+		buf := make([]byte, 128)
 		ok := internal.Subscribe(ctx, buf, updateMic, updateVolume)
 		log.Fatalln(ok)
 	}()
