@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -31,13 +32,46 @@ type Sound struct {
 }
 
 func Subscribe(ctx context.Context, buf []byte, updateSources, updateSinks chan<- struct{}) bool {
-	// could use io pipe instead of function
-	res := LightCallStreamLine(ctx, buf, pactl, []string{
+	r, w, err := os.Pipe()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	defer r.Close()
+
+	// could use double buffering to handle reads that are not a perfect line
+	go func() {
+		var n int
+		var line []byte
+		var err error
+		var i int
+
+		for {
+			line = buf
+			n, err = r.Read(line)
+			if err != nil {
+				return
+			}
+			line = line[:n]
+			for {
+				i = bytes.IndexByte(line, '\n')
+				if i == -1 {
+					break
+				}
+				eventLine(line, updateSources, updateSinks) // not the greatest design
+				line = line[i+1:]
+			}
+
+			if len(line) > 0 {
+				panic("broken line")
+			}
+		}
+	}()
+
+	res := LightCallStreamLine(ctx, w, pactl, []string{
 		pactl,
 		"--format=json",
 		"subscribe",
-	}, func(line []byte) {
-		eventLine(line, updateSources, updateSinks) // not the greatest design
 	})
 
 	return res
