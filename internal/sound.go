@@ -111,27 +111,30 @@ func (s *Sound) GetSources() (text []byte, ok bool) {
 
 	ok = true
 
-	var muted bool
 	var count int
-	var class string
+	var muted bool
+
+	var devClass string
+	var devMuted bool
 
 	jsonparser.ArrayEach(s.buffer.Bytes(), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if err != nil {
 			ok = false
 			return
 		}
-		muted, err = jsonparser.GetBoolean(value, "mute")
+		devMuted, err = jsonparser.GetBoolean(value, "mute")
 		if err != nil {
 			ok = false
 			return
 		}
-		class, err = jsonparser.GetUnsafeString(value, "properties", "device.class")
+		devClass, err = jsonparser.GetUnsafeString(value, "properties", "device.class")
 		if err != nil {
 			ok = false
 			return
 		}
-		if class != "monitor" {
+		if devClass != "monitor" {
 			count++
+			muted = devMuted
 		}
 	})
 
