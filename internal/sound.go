@@ -101,7 +101,6 @@ func eventLine(object []byte, updateSources, updateSinks chan<- struct{}) {
 	}
 }
 
-// TODO: return []byte still allocates, ignore for now
 func (s *Sound) GetSources() (text []byte, ok bool) {
 	res := LightCall(&s.buffer, pactl, []string{
 		pactl,
