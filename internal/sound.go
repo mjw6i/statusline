@@ -31,45 +31,16 @@ type Sound struct {
 	}
 }
 
-// buf should be a len=cap scratchpad
 func Subscribe(ctx context.Context, buf []byte, updateSources, updateSinks chan<- struct{}) bool {
 	r, w, err := os.Pipe()
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	defer r.Close()
 
-	// this should handle reads not being a perfect line with single event correctly. Not tested throughly
-	go func() {
-		var n, i int
-		var err error
-		var filled int // buf[0:filled] represents filled part of read buffer
-
-		for {
-			if cap(buf) == filled {
-				fmt.Printf("Space %d Filled %d Diff %d\n", cap(buf), filled, cap(buf)-filled)
-				panic("buffer out of space") // could extend the buffer instead
-			}
-			n, err = r.Read(buf[filled:]) // append data, don't allow overflows
-			filled += n
-			if err != nil {
-				return
-			}
-			for {
-				i = bytes.IndexByte(buf[:filled], '\n') // read only filled part
-				if i == -1 {
-					break
-				}
-				// i < filled
-				eventLine(buf[:i], updateSources, updateSinks) // not the greatest design to call this function here
-				// buf = [<event1><event2><part of event3>]
-				// need to remove event1 and delimiter
-				copy(buf, buf[i+1:])
-				filled -= (i + 1)
-			}
-		}
-	}()
+	go lineCallback(buf, r, func(b []byte) {
+		eventLine(b, updateSources, updateSinks)
+	})
 
 	res := LightCallStreamLine(ctx, w, pactl, []string{
 		pactl,
@@ -78,6 +49,38 @@ func Subscribe(ctx context.Context, buf []byte, updateSources, updateSinks chan<
 	})
 
 	return res
+}
+
+// buf should be a len=cap scratchpad
+// this should handle reads not being a perfect line with single event correctly. Not tested throughly
+func lineCallback(buf []byte, r *os.File, cb func([]byte)) {
+	var n, i int
+	var err error
+	var filled int // buf[0:filled] represents filled part of read buffer
+
+	for {
+		if cap(buf) == filled {
+			fmt.Printf("Space %d Filled %d Diff %d\n", cap(buf), filled, cap(buf)-filled)
+			panic("buffer out of space") // could extend the buffer instead
+		}
+		n, err = r.Read(buf[filled:]) // append data, don't allow overflows
+		filled += n
+		if err != nil {
+			return
+		}
+		for {
+			i = bytes.IndexByte(buf[:filled], '\n') // read only filled part
+			if i == -1 {
+				break
+			}
+			// i < filled
+			cb(buf[:i])
+			// buf = [<event1><event2><part of event3>]
+			// need to remove event1 and delimiter
+			copy(buf, buf[i+1:])
+			filled -= (i + 1)
+		}
+	}
 }
 
 func eventLine(line []byte, updateSources, updateSinks chan<- struct{}) {
