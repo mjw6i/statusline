@@ -2,7 +2,6 @@ package internal
 
 import (
 	"bytes"
-	"io"
 	"net"
 	"os/exec"
 	"slices"
@@ -63,7 +62,6 @@ func processLine(line []byte) (loopback, ok bool) {
 }
 
 func (i *IP) GetListeningIP() (text []byte, ok bool) {
-	defer i.buffer.Reset()
 	res := LightCall(&i.buffer, netstat, []string{
 		netstat,
 		"--numeric",
@@ -74,21 +72,26 @@ func (i *IP) GetListeningIP() (text []byte, ok bool) {
 		return []byte("error"), false
 	}
 
-	var err error
+	data := i.buffer.Bytes()
+	var line []byte
 
 	// skip two lines
 	for range 2 {
-		_, err = i.buffer.ReadBytes('\n')
-		if err != nil {
+		line = readLineWithDelim(data)
+		if line == nil {
 			return []byte("error"), false
 		}
+		data = data[len(line):]
 	}
 
-	var line []byte
 	var loopback bool
 
 	for {
-		line, err = i.buffer.ReadBytes('\n')
+		line = readLineWithDelim(data)
+		if line == nil {
+			break
+		}
+		data = data[len(line):]
 		if len(line) > 0 {
 			line = line[:len(line)-1]
 			loopback, res = processLine(line)
@@ -99,14 +102,17 @@ func (i *IP) GetListeningIP() (text []byte, ok bool) {
 				return []byte(" non loopback listener "), false
 			}
 		}
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return []byte("error"), false
-		}
 	}
 
 	return []byte(""), true
+}
+
+func readLineWithDelim(b []byte) (line []byte) {
+	i := bytes.IndexByte(b, '\n')
+	if i == -1 {
+		return nil
+	}
+	return b[:i+1]
 }
 
 func (i *IP) Render(b *[]byte) (ok bool) {
