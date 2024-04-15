@@ -38,7 +38,7 @@ func Subscribe(ctx context.Context, buf []byte, updateSources, updateSinks chan<
 	}
 	defer r.Close()
 
-	go lineCallback(buf, r, func(b []byte) {
+	go objectCallback(buf, r, func(b []byte) {
 		eventLine(b, updateSources, updateSinks)
 	})
 
@@ -52,39 +52,38 @@ func Subscribe(ctx context.Context, buf []byte, updateSources, updateSinks chan<
 }
 
 // buf should be a len=cap scratchpad
-// this should handle reads not being a perfect line with single event correctly. Not tested throughly
-func lineCallback(buf []byte, r *os.File, cb func([]byte)) {
-	var n, i int
+func objectCallback(buf []byte, r *os.File, cb func([]byte)) {
+	var n int
 	var err error
-	var filled int // buf[0:filled] represents filled part of read buffer
+	var filled int
 
 	for {
 		if cap(buf) == filled {
 			fmt.Printf("Space %d Filled %d Diff %d\n", cap(buf), filled, cap(buf)-filled)
 			panic("buffer out of space") // could extend the buffer instead
 		}
-		n, err = r.Read(buf[filled:]) // append data, don't allow overflows
+		n, err = r.Read(buf[filled:]) // append data
 		filled += n
 		if err != nil {
 			return
 		}
 		for {
-			i = bytes.IndexByte(buf[:filled], '\n') // read only filled part
-			if i == -1 {
+			object, dataType, offset, _ := jsonparser.Get(buf[:filled])
+			if dataType != jsonparser.Object {
 				break
 			}
-			// i < filled
-			cb(buf[:i])
-			// buf = [<event1><event2><part of event3>]
-			// need to remove event1 and delimiter
-			copy(buf, buf[i+1:])
-			filled -= (i + 1)
+
+			cb(object)
+			// buf = [<?delim><event1><delim><event2><delim><part of event3>]
+			// remove to the end of event1, let parser handle new lines before/after
+			copy(buf, buf[offset:])
+			filled -= offset
 		}
 	}
 }
 
-func eventLine(line []byte, updateSources, updateSinks chan<- struct{}) {
-	on, err := jsonparser.GetUnsafeString(line, "on")
+func eventLine(object []byte, updateSources, updateSinks chan<- struct{}) {
+	on, err := jsonparser.GetUnsafeString(object, "on")
 	if err != nil {
 		log.Fatal(err)
 	}
