@@ -68,11 +68,10 @@ func objectCallback(buf []byte, r *os.File, cb func([]byte)) {
 			return
 		}
 		for {
-			object, dataType, offset, _ := jsonparser.Get(buf[:filled])
-			if dataType != jsonparser.Object {
+			object, dataType, offset, err := jsonparser.Get(buf[:filled])
+			if dataType != jsonparser.Object || err != nil {
 				break
 			}
-
 			cb(object)
 			// buf = [<?delim><event1><delim><event2><delim><part of event3>]
 			// remove to the end of event1, let parser handle new lines before/after
@@ -85,7 +84,7 @@ func objectCallback(buf []byte, r *os.File, cb func([]byte)) {
 func eventLine(object []byte, updateSources, updateSinks chan<- struct{}) {
 	on, err := jsonparser.GetUnsafeString(object, "on")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	switch on {
