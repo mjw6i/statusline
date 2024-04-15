@@ -6,6 +6,7 @@ import (
 	"net"
 	"os/exec"
 	"slices"
+	"unsafe"
 )
 
 var netstat string
@@ -50,7 +51,10 @@ func processLine(line []byte) (loopback, ok bool) {
 		return false, false
 	}
 	line = line[:token]
-	ip := net.ParseIP(string(line))
+
+	ipstring := unsafe.String(unsafe.SliceData(line), len(line))
+	ip := net.ParseIP(ipstring)
+
 	if ip == nil {
 		return false, false
 	}
