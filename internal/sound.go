@@ -235,20 +235,13 @@ func (s *Sound) GetSinks() (int, bool) {
 }
 
 func (s *Sound) RenderVolume(b *[]byte, hide bool) (ok bool) {
-	text, ok := volume(s.Sink.vol, s.Sink.ok, hide)
-	*b = append(*b, text...)
-	return ok
-}
-
-// TODO: this chain requires a rewrite
-func volume(vol int, ok bool, hide bool) (text []byte, res bool) {
+	ok = s.Sink.ok
 	if !ok {
-		return []byte("error"), false
+		*b = append(*b, []byte(" error ")...)
+	} else if !hide {
+		*b = append(*b, []byte(" VOL: ")...)
+		*b = append(*b, []byte(strconv.Itoa(s.Sink.vol))...)
+		*b = append(*b, []byte(" % ")...)
 	}
-
-	if hide {
-		return []byte(""), true
-	}
-
-	return []byte(fmt.Sprintf(" VOL: %d%% ", vol)), true
+	return ok
 }
