@@ -31,6 +31,7 @@ type Sound struct {
 	}
 }
 
+// buf should be a len=cap scratchpad
 func Subscribe(ctx context.Context, buf []byte, updateSources, updateSinks chan<- struct{}) bool {
 	r, w, err := os.Pipe()
 	if err != nil {
@@ -39,31 +40,33 @@ func Subscribe(ctx context.Context, buf []byte, updateSources, updateSinks chan<
 
 	defer r.Close()
 
-	// could use double buffering to handle reads that are not a perfect line
+	// this should handle reads not being a perfect line with single event correctly. Not tested throughly
 	go func() {
-		var n int
-		var line []byte
+		var n, i int
 		var err error
-		var i int
+		var filled int // buf[0:filled] represents filled part of read buffer
 
 		for {
-			line = buf
-			n, err = r.Read(line)
+			if cap(buf) == filled {
+				fmt.Printf("Space %d Filled %d Diff %d\n", cap(buf), filled, cap(buf)-filled)
+				panic("buffer out of space") // could extend the buffer instead
+			}
+			n, err = r.Read(buf[filled:]) // append data, don't allow overflows
+			filled += n
 			if err != nil {
 				return
 			}
-			line = line[:n]
 			for {
-				i = bytes.IndexByte(line, '\n')
+				i = bytes.IndexByte(buf[:filled], '\n') // read only filled part
 				if i == -1 {
 					break
 				}
-				eventLine(line, updateSources, updateSinks) // not the greatest design
-				line = line[i+1:]
-			}
-
-			if len(line) > 0 {
-				panic("broken line")
+				// i < filled
+				eventLine(buf[:i], updateSources, updateSinks) // not the greatest design to call this function here
+				// buf = [<event1><event2><part of event3>]
+				// need to remove event1 and delimiter
+				copy(buf, buf[i+1:])
+				filled -= (i + 1)
 			}
 		}
 	}()
