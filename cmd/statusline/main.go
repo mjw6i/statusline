@@ -22,6 +22,8 @@ func main() {
 	flag.StringVar(&accent, "accent", "#000000", "accent color")
 	flag.Parse()
 
+	bar := internal.NewBar(os.Stdout, base, accent)
+
 	updateMic := make(chan struct{}, 1)
 	updateVolume := make(chan struct{}, 1)
 
@@ -29,12 +31,10 @@ func main() {
 	defer cancel()
 
 	go func() {
-		buf := make([]byte, 128)
-		ok := internal.Subscribe(ctx, buf, updateMic, updateVolume)
+		ok := bar.Sound.Subscribe(ctx, updateMic, updateVolume)
 		log.Fatalln(ok)
 	}()
 
-	bar := internal.NewBar(os.Stdout, base, accent)
 	bar.RenderInitial()
 
 	tXwayland := time.NewTicker(time.Minute)

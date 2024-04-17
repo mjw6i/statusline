@@ -38,7 +38,7 @@ func BenchmarkGetSources(b *testing.B) {
 func BenchmarkSubscribe(b *testing.B) {
 	updateMic := make(chan struct{})
 	updateVolume := make(chan struct{})
-	buf := make([]byte, 128)
+	buf := make([]byte, SUBSCRIBE_BUFFER_LENGTH)
 
 	for i := 0; i < b.N; i++ {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -48,7 +48,7 @@ func BenchmarkSubscribe(b *testing.B) {
 			cancel()
 		}()
 
-		Subscribe(ctx, buf, updateMic, updateVolume)
+		subscribe(ctx, buf, updateMic, updateVolume)
 	}
 }
 

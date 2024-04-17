@@ -13,6 +13,8 @@ import (
 	"github.com/buger/jsonparser"
 )
 
+const SUBSCRIBE_BUFFER_LENGTH = 128
+
 var pactl string
 
 func init() {
@@ -24,14 +26,24 @@ func init() {
 }
 
 type Sound struct {
-	buffer bytes.Buffer
-	Sink   struct {
+	subBuffer []byte
+	cmdBuffer bytes.Buffer
+	Sink      struct {
 		vol int
 		ok  bool
 	}
 }
 
-func Subscribe(ctx context.Context, buf []byte, updateSources, updateSinks chan<- struct{}) bool {
+func NewSound() *Sound {
+	buf := make([]byte, SUBSCRIBE_BUFFER_LENGTH)
+	return &Sound{subBuffer: buf}
+}
+
+func (s *Sound) Subscribe(ctx context.Context, updateSources, updateSinks chan<- struct{}) bool {
+	return subscribe(ctx, s.subBuffer, updateSources, updateSinks)
+}
+
+func subscribe(ctx context.Context, buf []byte, updateSources, updateSinks chan<- struct{}) bool {
 	r, w, err := os.Pipe()
 	if err != nil {
 		log.Fatalln(err)
@@ -102,7 +114,7 @@ func eventLine(object []byte, updateSources, updateSinks chan<- struct{}) {
 }
 
 func (s *Sound) GetSources() (text []byte, ok bool) {
-	res := LightCall(&s.buffer, pactl, []string{
+	res := LightCall(&s.cmdBuffer, pactl, []string{
 		pactl,
 		"--format=json",
 		"list",
@@ -120,7 +132,7 @@ func (s *Sound) GetSources() (text []byte, ok bool) {
 	var devClass string
 	var devMuted bool
 
-	jsonparser.ArrayEach(s.buffer.Bytes(), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+	jsonparser.ArrayEach(s.cmdBuffer.Bytes(), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if err != nil {
 			ok = false
 			return
@@ -177,7 +189,7 @@ func (s *Sound) GetSinksDiff() (diff bool) {
 }
 
 func (s *Sound) GetSinks() (int, bool) {
-	ok := LightCall(&s.buffer, pactl, []string{
+	ok := LightCall(&s.cmdBuffer, pactl, []string{
 		pactl,
 		"--format=json",
 		"list",
@@ -191,7 +203,7 @@ func (s *Sound) GetSinks() (int, bool) {
 	var flp, frp string
 	var count int
 
-	jsonparser.ArrayEach(s.buffer.Bytes(), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+	jsonparser.ArrayEach(s.cmdBuffer.Bytes(), func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		if err != nil {
 			ok = false
 			return

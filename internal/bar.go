@@ -18,13 +18,13 @@ type Bar struct {
 		Date     []byte
 	}
 	ip    IP
-	sound Sound
+	Sound *Sound
 }
 
 func NewBar(output io.Writer, base, accent string) *Bar {
 	return &Bar{
 		buf:    bufio.NewWriter(output),
-		sound:  Sound{},
+		Sound:  NewSound(),
 		ip:     IP{},
 		date:   NewDate(),
 		base:   base,
@@ -54,15 +54,15 @@ func (b *Bar) UpdateAll() {
 
 func (b *Bar) UpdateMuted() {
 	b.renderPanelPrefix(&b.cache.Muted, []byte("muted"))
-	ok := b.sound.RenderMuted(&b.cache.Muted)
+	ok := b.Sound.RenderMuted(&b.cache.Muted)
 	b.renderPanelSuffix(&b.cache.Muted, ok)
 }
 
 func (b *Bar) UpdateVolume() bool {
-	diff := b.sound.GetSinksDiff()
+	diff := b.Sound.GetSinksDiff()
 	if diff {
 		b.renderPanelPrefix(&b.cache.Volume, []byte("volume"))
-		ok := b.sound.RenderVolume(&b.cache.Volume, false)
+		ok := b.Sound.RenderVolume(&b.cache.Volume, false)
 		b.renderPanelSuffix(&b.cache.Volume, ok)
 	}
 	return diff
@@ -71,7 +71,7 @@ func (b *Bar) UpdateVolume() bool {
 // TODO: hiding logic requires a rewrite
 func (b *Bar) HideVolumeIfNoError() {
 	b.renderPanelPrefix(&b.cache.Volume, []byte("volume"))
-	ok := b.sound.RenderVolume(&b.cache.Volume, true)
+	ok := b.Sound.RenderVolume(&b.cache.Volume, true)
 	b.renderPanelSuffix(&b.cache.Volume, ok)
 }
 
