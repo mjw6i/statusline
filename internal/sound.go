@@ -54,7 +54,7 @@ func subscribe(ctx context.Context, buf []byte, updateSources, updateSinks chan<
 		eventLine(b, updateSources, updateSinks)
 	})
 
-	res := LightCallStreamLine(ctx, w, pactl, []string{
+	res := LightCallStream(ctx, w, pactl, []string{
 		pactl,
 		"--format=json",
 		"subscribe",

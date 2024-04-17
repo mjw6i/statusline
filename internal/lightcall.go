@@ -76,7 +76,7 @@ func LightCall(buffer *bytes.Buffer, target string, args []string) bool {
 }
 
 // a lot of copy pasta
-func LightCallStreamLine(ctx context.Context, w *os.File, target string, args []string) bool {
+func LightCallStream(ctx context.Context, w *os.File, target string, args []string) bool {
 	defer w.Close()
 
 	files := []*os.File{NullFile, w, NullFile}
