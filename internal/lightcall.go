@@ -69,7 +69,7 @@ func LightCall(buffer *bytes.Buffer, target string, args []string) bool {
 		log.Fatalln(err)
 	}
 	// reading should most likely be done in a goroutine
-	// this only works synchronously due to linux pipe buffer size
+	// most likely cause for this to work synchronously is linux pipe buffer
 	// being bigger than output
 
 	return state.Success()
