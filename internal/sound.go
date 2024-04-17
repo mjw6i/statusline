@@ -142,7 +142,7 @@ func (s *Sound) GetSources() (text []byte, ok bool) {
 	})
 
 	if !ok {
-		return []byte("error"), false
+		return []byte(" error "), false
 	}
 
 	if count == 0 {
@@ -241,7 +241,7 @@ func (s *Sound) RenderVolume(b *[]byte, hide bool) (ok bool) {
 	} else if !hide {
 		*b = append(*b, []byte(" VOL: ")...)
 		*b = append(*b, []byte(strconv.Itoa(s.Sink.vol))...)
-		*b = append(*b, []byte(" % ")...)
+		*b = append(*b, []byte("% ")...)
 	}
 	return ok
 }

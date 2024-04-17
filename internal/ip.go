@@ -69,7 +69,7 @@ func (i *IP) GetListeningIP() (text []byte, ok bool) {
 		"-tl",
 	})
 	if !res {
-		return []byte("error"), false
+		return []byte(" error "), false
 	}
 
 	data := i.buffer.Bytes()
@@ -79,7 +79,7 @@ func (i *IP) GetListeningIP() (text []byte, ok bool) {
 	for range 2 {
 		line = readLineWithDelim(data)
 		if line == nil {
-			return []byte("error"), false
+			return []byte(" error "), false
 		}
 		data = data[len(line):]
 	}
@@ -96,7 +96,7 @@ func (i *IP) GetListeningIP() (text []byte, ok bool) {
 			line = line[:len(line)-1]
 			loopback, res = processLine(line)
 			if !res {
-				return []byte("error"), false
+				return []byte(" error "), false
 			}
 			if !loopback {
 				return []byte(" non loopback listener "), false

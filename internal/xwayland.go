@@ -22,7 +22,7 @@ func GetXWayland() (text []byte, ok bool) {
 	if ec == 0 {
 		return []byte(" xwayland "), false
 	}
-	return []byte("error"), false
+	return []byte(" error "), false
 }
 
 func RenderXWayland(b *[]byte) (ok bool) {
