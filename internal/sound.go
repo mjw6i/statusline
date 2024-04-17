@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -44,17 +43,13 @@ func (s *Sound) Subscribe(ctx context.Context, updateSources, updateSinks chan<-
 }
 
 func subscribe(ctx context.Context, buf []byte, updateSources, updateSinks chan<- struct{}) bool {
-	r, w, err := os.Pipe()
-	if err != nil {
-		log.Fatalln(err)
+	p := func(r *os.File) {
+		objectCallback(buf, r, func(b []byte) {
+			eventLine(b, updateSources, updateSinks)
+		})
 	}
-	defer r.Close()
 
-	go objectCallback(buf, r, func(b []byte) {
-		eventLine(b, updateSources, updateSinks)
-	})
-
-	res := LightCallStream(ctx, w, pactl, []string{
+	res := LightCallStream(ctx, p, pactl, []string{
 		pactl,
 		"--format=json",
 		"subscribe",

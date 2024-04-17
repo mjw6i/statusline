@@ -75,9 +75,16 @@ func LightCall(buffer *bytes.Buffer, target string, args []string) bool {
 	return state.Success()
 }
 
+type pipereaderfunc func(r *os.File)
+
 // a lot of copy pasta
-func LightCallStream(ctx context.Context, w *os.File, target string, args []string) bool {
+func LightCallStream(ctx context.Context, reader pipereaderfunc, target string, args []string) bool {
+	r, w, err := os.Pipe()
+	if err != nil {
+		log.Fatalln(err)
+	}
 	defer w.Close()
+	defer r.Close()
 
 	files := []*os.File{NullFile, w, NullFile}
 	process, err := os.StartProcess(target, args, &os.ProcAttr{
@@ -89,13 +96,15 @@ func LightCallStream(ctx context.Context, w *os.File, target string, args []stri
 		log.Fatalln(err)
 	}
 
-	// could leak goroutine?
 	go func() {
 		<-ctx.Done()
+		// killing a process can return non-zero exit code
 		_ = process.Kill()
-		// ignored error *perhaps* will appear in Wait
 	}()
 
+	go reader(r)
+
+	// processes killed by .Kill() return no error and -1 as exit code
 	state, err := process.Wait()
 	if err != nil {
 		log.Fatalln(err)
