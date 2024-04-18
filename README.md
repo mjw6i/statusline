@@ -23,5 +23,7 @@ BenchmarkOldUpdateAndRender-16    	    2193	   6544635 ns/op	   57554 B/op	     
 PASS
 ok  	github.com/mjw6i/statusline/internal	27.282s
 ```
-That's nearly 100x less memory allocated per operation and a few times fewer allocations.<br/>
+> [!NOTE]
+> That's nearly 100x less memory allocated per operation and a few times fewer allocations.
+
 You would be able to go most of the way without resorting to as extreme measures as I did.<br/>
