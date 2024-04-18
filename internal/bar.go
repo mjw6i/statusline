@@ -46,10 +46,10 @@ func (b *Bar) RenderHeader() {
 
 func (b *Bar) UpdateAll() {
 	b.UpdateMuted()
-	b.UpdateVolume()
-	b.UpdateIP()
-	b.UpdateXWayland()
-	b.UpdateDate()
+	// b.UpdateVolume()
+	// b.UpdateIP()
+	// b.UpdateXWayland()
+	// b.UpdateDate()
 }
 
 func (b *Bar) UpdateMuted() {
@@ -121,15 +121,15 @@ func (b *Bar) Render() {
 	// this could be done cleaner
 	b.buf.WriteByte(',')
 	b.buf.WriteByte('[')
-	b.buf.Write(b.cache.IP)
-	b.buf.WriteByte(',')
-	b.buf.Write(b.cache.XWayland)
-	b.buf.WriteByte(',')
+	// b.buf.Write(b.cache.IP)
+	// b.buf.WriteByte(',')
+	// b.buf.Write(b.cache.XWayland)
+	// b.buf.WriteByte(',')
 	b.buf.Write(b.cache.Muted)
-	b.buf.WriteByte(',')
-	b.buf.Write(b.cache.Volume)
-	b.buf.WriteByte(',')
-	b.buf.Write(b.cache.Date)
+	// b.buf.WriteByte(',')
+	// b.buf.Write(b.cache.Volume)
+	// b.buf.WriteByte(',')
+	// b.buf.Write(b.cache.Date)
 	b.buf.WriteByte(']')
 	b.buf.WriteByte('\n')
 	b.buf.Flush()
