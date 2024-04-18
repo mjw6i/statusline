@@ -8,6 +8,7 @@ import (
 type Bar struct {
 	buf    *bufio.Writer
 	date   *Date
+	Sound  *Sound
 	base   string
 	accent string
 	cache  struct {
@@ -17,8 +18,7 @@ type Bar struct {
 		XWayland []byte
 		Date     []byte
 	}
-	ip    IP
-	Sound *Sound
+	ip IP
 }
 
 func NewBar(output io.Writer, base, accent string) *Bar {
