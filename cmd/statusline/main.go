@@ -62,7 +62,6 @@ func main() {
 				tHideVolume.Reset(hideVolumeDuration)
 			}
 		case <-tHideVolume.C:
-			// should that be a timer not a ticker?
 			tHideVolume.Stop()
 			bar.HideVolumeIfNoError()
 		case <-tXwayland.C:
