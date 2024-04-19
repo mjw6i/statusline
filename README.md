@@ -38,10 +38,13 @@ The memory limit before GC could be reduced, but it's fairly unlikely to hit the
 As an attempt to quantify the difference between fairly standard (even slightly naive) go code and optimized code, I pulled an older version of the same functionality and ran a benchmark.<br/>
 > Code inside the benchmark starts a new process, parses its JSON output, produces and JSON encodes the output, and then pushes it to the standard output (or dev null) 5 times.<br/>
 
-```
-branch old-code-compare
-go test -bench=UpdateAndRender -run=^# -benchmem -benchtime=10s ./... | tee out
+<details>
 
+<summary>go test -bench=UpdateAndRender -run=^# -benchmem -benchtime=10s ./... | tee out</summary>
+
+> branch old-code-compare
+
+```
 goos: linux
 goarch: amd64
 pkg: github.com/mjw6i/statusline/internal
@@ -51,6 +54,14 @@ BenchmarkOldUpdateAndRender-16    	    2193	   6544635 ns/op	   57554 B/op	     
 PASS
 ok  	github.com/mjw6i/statusline/internal	27.282s
 ```
+
+</details>
+
+| Version | B/op | allocs/op |
+| ---: | ---: | ---: |
+| old | 57554 B/op | 99 allocs/op |
+| new | 662 B/op | 15 allocs/op |
+
 > [!NOTE]
 > That's nearly 100x less memory allocated per operation and a few times fewer allocations.
 
