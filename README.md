@@ -8,6 +8,11 @@ It functions similarly to a taskbar (in an environment where there is no taskbar
 
 ![screenshot](/bar.png)
 
+# How it does it
+`statusline` is an executable that takes no inputs and outputs JSON-encoded data to standard output whenever something important changes.<br/>
+Sound-related changes subscribe to published events, this is done via a single long-running (os) process.<br/>
+Other changes operate on a timer and also gather data by calling other executables.<br/>
+
 # What to expect
 Code optimized for
 - reduced resource usage
