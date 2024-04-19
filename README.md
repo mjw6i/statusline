@@ -6,6 +6,8 @@ It functions similarly to a taskbar (in an environment where there is no taskbar
 - show a warning if any process is listening on a non-local TCP address (make sure local development stays local)
 - show a warning if a compatibility layer is running
 
+![screenshot](/bar.png)
+
 # What to expect
 Code optimized for
 - reduced resource usage
