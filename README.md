@@ -1,3 +1,24 @@
+# What it does
+It functions similarly to a taskbar (in an environment where there is no taskbar).
+- display the day of the week, date and time
+- display current volume if recently changed
+- show a warning if the microphone is not muted, or if there are multiple microphones other programs might confuse
+- show a warning if any process is listening on a non-local TCP address (make sure local development stays local)
+- show a warning if a compatibility layer is running
+
+# What to expect
+Code optimized for
+- reduced resource usage
+- minimal count and size of runtime allocations
+- performance (where it doesn't increase resource usage)
+- a lot of benchmarks
+
+# What NOT to expect
+- production code
+- test coverage
+- very graceful error handling, in this scope it's preferred to say what's wrong and stop execution
+- very clean abstractions
+
 # Goals
 Usually, programs are optimized for speed.<br/>
 This however is a background utility, its performance is secondary to resource usage.<br/>
