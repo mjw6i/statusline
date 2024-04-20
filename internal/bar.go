@@ -68,7 +68,6 @@ func (b *Bar) UpdateVolume() bool {
 	return diff
 }
 
-// TODO: hiding logic requires a rewrite
 func (b *Bar) HideVolumeIfNoError() {
 	b.renderPanelPrefix(&b.cache.Volume, []byte("volume"))
 	ok := b.Sound.RenderVolume(&b.cache.Volume, true)
