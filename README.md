@@ -6,7 +6,7 @@ It functions similarly to a taskbar (in an environment where there is no taskbar
 - show a warning if any process is listening on a non-local TCP address (make sure local development stays local)
 - show a warning if a compatibility layer is running
 
-![screenshot](/bar.png)
+![screenshot of the bar](/bar.png)
 
 # How it does it
 `statusline` is an executable that takes no inputs and outputs JSON-encoded data to standard output whenever something important changes.<br/>
@@ -95,3 +95,8 @@ ok  	github.com/mjw6i/statusline/internal	124.993s
 ```
 
 </details>
+
+Highlighted nodes are responsible for calling outside executables.<br/>
+They represent a custom abstraction over `os.StartProcess`, implemented to reduce the overall cost.<br/>
+
+![screenshot of pprof](/pprof.png)
