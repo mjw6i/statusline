@@ -96,7 +96,8 @@ ok  	github.com/mjw6i/statusline/internal	124.993s
 
 </details>
 
-Highlighted nodes are responsible for calling outside executables.<br/>
-They represent a custom abstraction over `os.StartProcess`, implemented to reduce the overall cost.<br/>
-
 ![screenshot of pprof](/pprof.png)
+
+> [!NOTE]
+> Highlighted nodes are responsible for calling outside executables.<br/>
+> They represent a custom abstraction over `os.StartProcess`, implemented to reduce the overall cost.
