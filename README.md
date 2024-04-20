@@ -66,3 +66,32 @@ ok  	github.com/mjw6i/statusline/internal	27.282s
 > That's nearly 100x less memory allocated per operation and a few times fewer allocations.
 
 You would be able to go most of the way without resorting to as extreme measures as I did.<br/>
+
+## Performance characteristics
+At the end, processing the data and outputting results doesn't allocate.<br/>
+I'll dig into it deeper later on, but the allocations are caused by calling other executables.<br/>
+
+<details>
+
+<summary>GOGC=off go test -bench=. -run=^# -benchmem -benchtime=10s ./internal/... | tee out </summary>
+
+```
+goos: linux
+goarch: amd64
+pkg: github.com/mjw6i/statusline/internal
+cpu: AMD Ryzen 7 3700X 8-Core Processor
+BenchmarkBarRenderHeader-16    	34269534	       346.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBarRenderAll-16       	30892675	       384.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkUpdateAll-16          	     484	  23466704 ns/op	    2414 B/op	      56 allocs/op
+BenchmarkGetDate-16            	55408135	       192.4 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGetIP-16              	    4033	   2893564 ns/op	     664 B/op	      15 allocs/op
+BenchmarkGetSinks-16           	    2445	   5177240 ns/op	     659 B/op	      15 allocs/op
+BenchmarkGetSources-16         	    2316	   5083940 ns/op	     662 B/op	      15 allocs/op
+BenchmarkSubscribe-16          	    3372	   3589968 ns/op	    1094 B/op	      24 allocs/op
+BenchmarkEventLine-16          	14473698	       791.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkGetXWayland-16        	    1282	   9754279 ns/op	     400 B/op	      11 allocs/op
+PASS
+ok  	github.com/mjw6i/statusline/internal	124.993s
+```
+
+</details>
